@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IC Learning Visualizer - 一致指数をビジュアルで理解</title>
+  <meta name="description" content="Index of Coincidence（IC）をヒストグラムと確率実験で直感理解できる教育用ツール。">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>IC Learning Visualizer <span class="subtle">（Index of Coincidence）</span></h1>
+
+    <section class="card">
+      <h2>1) テキスト入力</h2>
+      <div class="controls">
+        <textarea id="inputText" rows="6" placeholder="ここに平文や暗号文を貼り付け…"></textarea>
+        <div class="options">
+          <label><input type="checkbox" id="normalizeAZ" checked /> A–Z のみ（大文字化・非英字除去）</label>
+          <label><input type="checkbox" id="removeSpaces" checked /> 空白・改行・記号を除去</label>
+        </div>
+        <div class="buttons">
+          <button id="btnSampleEnglish" class="secondary">英語風サンプル</button>
+          <button id="btnSampleRandom" class="secondary">ランダム英字（500文字）</button>
+          <button id="btnCalc" class="primary">ICを計算</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2) 結果と可視化</h2>
+      <div class="grid-2">
+        <div>
+          <div class="metrics">
+            <div><strong>N（文字数）:</strong> <span id="N">0</span></div>
+            <div><strong>Σ nᵢ(nᵢ−1):</strong> <span id="sumNi">0</span></div>
+            <div><strong>N(N−1):</strong> <span id="denom">0</span></div>
+            <div class="icline">
+              <strong>IC（観測値）:</strong>
+              <span id="IC" class="badge">0.0000</span>
+            </div>
+          </div>
+
+          <div class="refs">
+            <div>等分布の期待IC: <code>1/26 ≈ 0.0385</code></div>
+            <div>英語平文の典型IC: <code>≈ 0.066 ～ 0.068</code></div>
+            <div>観測 pᵢ = nᵢ/N のとき <code>Σ pᵢ²</code> = <span id="sumPi2">0.0000</span></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="chartTitle">A–Z 頻度ヒストグラム</div>
+          <div id="freqChart" class="freqChart"></div>
+        </div>
+      </div>
+
+      <details class="explain">
+        <summary>数式のつながり（クリックで展開）</summary>
+        <p>IC は「同じテキストから無作為に<strong>異なる2文字</strong>を引いたとき、一致する確率」です。</p>
+        <ul>
+          <li>文字 A–Z の出現回数を nᵢ、総文字数を N とすると、同一文字 i を「順序を区別して2つ選ぶ」通り数は <code>nᵢ(nᵢ−1)</code>。</li>
+          <li>全体で「順序を区別して2つ選ぶ」通り数は <code>N(N−1)</code>。</li>
+          <li>よって <code>IC = (Σ nᵢ(nᵢ−1)) / (N(N−1))</code>。</li>
+          <li>確率分布 pᵢ = nᵢ/N を使うと、直感的に <code>IC ≈ Σ pᵢ²</code> と理解できます。</li>
+        </ul>
+      </details>
+    </section>
+
+    <section class="card">
+      <h2>3) モンテカルロ（確率の直感）</h2>
+      <p class="help">
+        テキストから<strong>異なる2か所</strong>をランダムに取り、2文字が一致した割合を試行で近似します。理論値（上の IC）に収束していく様子が見られます。
+      </p>
+      <div class="mcRow">
+        <div class="mcControls">
+          <label>試行回数:
+            <input type="number" id="trialCount" min="1" step="100" value="2000" />
+          </label>
+          <div class="buttons">
+            <button id="btnOnce">1 回だけ</button>
+            <button id="btn100">+100 回</button>
+            <button id="btnRun" class="primary">連続実行</button>
+            <button id="btnStop" class="danger">停止</button>
+            <button id="btnReset" class="secondary">統計リセット</button>
+          </div>
+          <div class="mcStats">
+            <div>試行: <span id="mcTrials">0</span></div>
+            <div>一致: <span id="mcHits">0</span></div>
+            <div>一致率（推定IC）: <span id="mcRate">0.0000</span></div>
+          </div>
+          <div class="progressWrap">
+            <div id="progress" class="progress"></div>
+          </div>
+        </div>
+        <div class="mcViz">
+          <div class="mcHead">最後のサンプル</div>
+          <div class="mcPick">
+            <div>位置: <span id="idxA">-</span> / 文字: <span id="charA">-</span></div>
+            <div>位置: <span id="idxB">-</span> / 文字: <span id="charB">-</span></div>
+            <div>一致？ → <span id="match" class="badge">-</span></div>
+          </div>
+          <div class="mcNote">※ 2つの位置は毎回ランダムで、同じ位置は選びません。</div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="footer">
+        🔗 GitHubリポジトリはこちら（ <a href="https://github.com/ipusiron/ic-learning-visualizer" target="_blank">ipusiron/ic-learning-visualizer</a> ）
+      </div>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
