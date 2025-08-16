@@ -39,16 +39,57 @@ function validateInput(text) {
     throw new Error('入力はテキスト形式である必要があります');
   }
   if (text.length > 100000) {
-    throw new Error('テキストが長すぎます');
+    throw new Error('テキストが長すぎます（最大10万文字）');
   }
+  
+  // 潜在的に危険なパターンをチェック
+  const dangerousPatterns = [
+    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+    /javascript:/gi,
+    /on\w+\s*=/gi,
+    /data:text\/html/gi
+  ];
+  
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(text)) {
+      throw new Error('許可されていない文字パターンが含まれています');
+    }
+  }
+  
   return true;
 }
 
 // エラー処理
 function showError(message) {
   console.error(message);
-  // 簡単なアラート表示（本番では改善）
-  alert(message);
+  // セキュリティを考慮したエラー表示
+  const sanitizedMessage = escapeHtml(message);
+  
+  // モダンなエラー表示（alertの代替）
+  const errorDiv = document.createElement('div');
+  errorDiv.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--danger);
+    color: white;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    max-width: 300px;
+    word-break: break-word;
+  `;
+  errorDiv.innerHTML = sanitizedMessage;
+  
+  document.body.appendChild(errorDiv);
+  
+  // 3秒後に自動削除
+  setTimeout(() => {
+    if (errorDiv.parentNode) {
+      errorDiv.parentNode.removeChild(errorDiv);
+    }
+  }, 3000);
 }
 
 // ユーティリティ関数

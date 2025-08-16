@@ -101,11 +101,9 @@ ICの概念は暗号解読に役立ちます。
 
 **一致指数（Index of Coincidence; IC）** とは、あるテキストからランダムに2文字を選んだとき、それらが同じ文字である確率を表す統計量です。
 
-文字ごとの出現回数を \( n_i \)、総文字数を \( N \) とすると、次式で定義されます。
+文字ごとの出現回数を n_i、総文字数を N とすると、次式で定義されます。
 
-\[
-IC = \frac{\sum_i n_i (n_i - 1)}{N (N - 1)}
-\]
+<img src="https://latex.codecogs.com/svg.image?IC%20=%20\frac{\sum_i%20n_i%20(n_i%20-%201)}{N%20(N%20-%201)}" alt="IC = Σn_i(n_i-1) / N(N-1)" />
 
 - **等分布の英字ランダム文字列**では、ICがおよそ **1/26 ≈ 0.0385**。  
 - **実際の英語平文**では文字の偏り（'E'が多いなど）があるため、ICが **0.066–0.068** 程度になります。
@@ -124,7 +122,6 @@ ic-learning-visualizer/
 ├── index.html          # メインのHTMLファイル（教育版タブ型UI）
 ├── script.js           # JavaScript機能（全タブ対応）
 ├── style.css           # スタイルシート（ライトテーマ）
-├── test-xss.html       # XSS脆弱性テストファイル
 ├── about_ic.md         # ICの数学的詳細解説
 ├── CLAUDE.md           # Claude Code用プロジェクト文書
 ├── README.md           # このファイル
