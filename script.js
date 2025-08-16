@@ -7,6 +7,11 @@ let monteCarloRunning = false;
 let monteCarloData = [];
 let convergenceChart = null;
 
+// Web Worker関連
+let icWorker = null;
+let workerSupported = false;
+let pendingWorkerTasks = new Map();
+
 // サンプルデータ
 const samples = {
   english: "The quick brown fox jumps over the lazy dog. This pangram contains every letter of the alphabet at least once. In cryptanalysis, the Index of Coincidence is a statistical measure used to determine the likelihood that two randomly selected characters from a text are the same. English text typically has an IC value around 0.067, which reflects the natural frequency distribution of letters in the language. Common letters like E, T, A, O, I, N appear much more frequently than rare letters like Q, X, Z, making the probability of selecting matching characters higher than in truly random text.",
@@ -59,6 +64,76 @@ function validateInput(text) {
   return true;
 }
 
+// Web Worker初期化
+function initWorker() {
+  try {
+    if (typeof Worker !== 'undefined') {
+      icWorker = new Worker('worker.js');
+      workerSupported = true;
+      
+      icWorker.onmessage = handleWorkerMessage;
+      icWorker.onerror = (error) => {
+        console.error('Worker error:', error);
+        workerSupported = false;
+        icWorker = null;
+      };
+      
+      console.log('Web Worker initialized successfully');
+    } else {
+      console.log('Web Workers not supported, using fallback');
+      workerSupported = false;
+    }
+  } catch (error) {
+    console.error('Failed to initialize Web Worker:', error);
+    workerSupported = false;
+    icWorker = null;
+  }
+}
+
+// Worker メッセージハンドラー
+function handleWorkerMessage(e) {
+  const { type, id, result, success, error } = e.data;
+  
+  if (type === 'worker_ready') {
+    console.log('Worker ready:', e.data.message);
+    return;
+  }
+  
+  const task = pendingWorkerTasks.get(id);
+  if (task) {
+    pendingWorkerTasks.delete(id);
+    
+    if (success) {
+      task.resolve(result);
+    } else {
+      task.reject(new Error(error));
+    }
+  }
+}
+
+// Worker タスク実行
+function executeWorkerTask(type, data) {
+  return new Promise((resolve, reject) => {
+    if (!workerSupported || !icWorker) {
+      reject(new Error('Worker not available'));
+      return;
+    }
+    
+    const id = Math.random().toString(36).substr(2, 9);
+    pendingWorkerTasks.set(id, { resolve, reject });
+    
+    icWorker.postMessage({ type, data, id });
+    
+    // タイムアウト処理（30秒）
+    setTimeout(() => {
+      if (pendingWorkerTasks.has(id)) {
+        pendingWorkerTasks.delete(id);
+        reject(new Error('Worker task timeout'));
+      }
+    }, 30000);
+  });
+}
+
 // エラー処理
 function showError(message) {
   console.error(message);
@@ -106,7 +181,26 @@ function normalize(text, keepAZ = true, removeSpaces = true) {
   }
 }
 
-function calcIC(text) {
+// IC計算（Worker使用）
+async function calcIC(text) {
+  try {
+    if (text.length < 2) return 0;
+    
+    // 小さなテキストや Worker が利用できない場合はフォールバック
+    if (text.length < 1000 || !workerSupported) {
+      return calcICFallback(text);
+    }
+    
+    // Worker で計算
+    return await executeWorkerTask('calcIC', { text });
+  } catch (error) {
+    console.warn('Worker IC calculation failed, using fallback:', error.message);
+    return calcICFallback(text);
+  }
+}
+
+// IC計算（フォールバック）
+function calcICFallback(text) {
   try {
     if (text.length < 2) return 0;
     
@@ -137,7 +231,24 @@ function calcIC(text) {
   }
 }
 
-function getCharCounts(text) {
+// 文字カウント（Worker使用）
+async function getCharCounts(text) {
+  try {
+    // 小さなテキストや Worker が利用できない場合はフォールバック
+    if (text.length < 1000 || !workerSupported) {
+      return getCharCountsFallback(text);
+    }
+    
+    // Worker で計算
+    return await executeWorkerTask('getCharCounts', { text });
+  } catch (error) {
+    console.warn('Worker char counts failed, using fallback:', error.message);
+    return getCharCountsFallback(text);
+  }
+}
+
+// 文字カウント（フォールバック）
+function getCharCountsFallback(text) {
   const counts = {};
   for (let i = 0; i < 26; i++) {
     counts[String.fromCharCode(65 + i)] = 0;
@@ -224,7 +335,7 @@ function updateStepDisplay() {
   document.getElementById('nextStep').disabled = currentStep === totalSteps;
 }
 
-function calculateSimple() {
+async function calculateSimple() {
   const input = document.getElementById('simpleText').value;
   const text = normalize(input, true, true);
   
@@ -233,45 +344,49 @@ function calculateSimple() {
     return;
   }
   
-  const counts = getCharCounts(text);
-  const ic = calcIC(text);
-  
-  // テーブル更新
-  const tbody = document.getElementById('freqTableBody');
-  tbody.innerHTML = '';
-  
-  let totalCombinations = 0;
-  for (const char in counts) {
-    const count = counts[char];
-    if (count > 0) {
-      const combinations = count * (count - 1);
-      totalCombinations += combinations;
-      
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${char}</td>
-        <td>${count}</td>
-        <td>${combinations}</td>
-      `;
-      tbody.appendChild(row);
+  try {
+    const counts = await getCharCounts(text);
+    const ic = await calcIC(text);
+    
+    // テーブル更新
+    const tbody = document.getElementById('freqTableBody');
+    tbody.innerHTML = '';
+    
+    let totalCombinations = 0;
+    for (const char in counts) {
+      const count = counts[char];
+      if (count > 0) {
+        const combinations = count * (count - 1);
+        totalCombinations += combinations;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${char}</td>
+          <td>${count}</td>
+          <td>${combinations}</td>
+        `;
+        tbody.appendChild(row);
+      }
     }
+    
+    // 計算結果更新
+    const N = text.length;
+    const denom = N * (N - 1);
+    
+    document.getElementById('stepN').textContent = N;
+    document.getElementById('stepDenom').textContent = denom;
+    document.getElementById('stepNum').textContent = totalCombinations;
+    document.getElementById('stepIC').textContent = ic.toFixed(4);
+    
+    // 計算過程を表示
+    document.getElementById('denomCalc').textContent = `= ${N} × ${N - 1}`;
+    document.getElementById('icCalc').textContent = `= ${totalCombinations} ÷ ${denom}`;
+  } catch (error) {
+    showError('計算エラー: ' + error.message);
   }
-  
-  // 計算結果更新
-  const N = text.length;
-  const denom = N * (N - 1);
-  
-  document.getElementById('stepN').textContent = N;
-  document.getElementById('stepDenom').textContent = denom;
-  document.getElementById('stepNum').textContent = totalCombinations;
-  document.getElementById('stepIC').textContent = ic.toFixed(4);
-  
-  // 計算過程を表示
-  document.getElementById('denomCalc').textContent = `= ${N} × ${N - 1}`;
-  document.getElementById('icCalc').textContent = `= ${totalCombinations} ÷ ${denom}`;
 }
 
-function initPatternExamples() {
+async function initPatternExamples() {
   // パターン例のバーチャート作成
   const patterns = [
     { text: 'ABCDEFGHIJ', element: 'pattern1' }, // すべて異なる
@@ -280,8 +395,9 @@ function initPatternExamples() {
     { text: 'AAAAAABBCD', element: 'pattern4' }  // 偏り
   ];
   
+  // 小さなパターンなのでフォールバックを直接使用
   patterns.forEach(pattern => {
-    const counts = getCharCounts(pattern.text);
+    const counts = getCharCountsFallback(pattern.text);
     createMiniBarChart(pattern.element, counts);
   });
 }
@@ -480,7 +596,7 @@ function initSampleAnalysis() {
   performAnalysis();
 }
 
-function performAnalysis() {
+async function performAnalysis() {
   const rawText = document.getElementById('analyzeText').value;
   const keepAZ = document.getElementById('analyzeAZ').checked;
   const removeSpaces = document.getElementById('analyzeSpaces').checked;
@@ -490,23 +606,45 @@ function performAnalysis() {
     return;
   }
   
-  const processedText = normalize(rawText, keepAZ, removeSpaces);
-  
-  if (processedText.length < 2) {
-    showError('処理後のテキストが短すぎます');
-    return;
+  try {
+    // Worker で一括処理が可能な場合は使用
+    if (rawText.length >= 1000 && workerSupported) {
+      const result = await executeWorkerTask('analyzeText', {
+        rawText,
+        keepAZ,
+        removeSpaces
+      });
+      
+      analysisText = result.processedText;
+      
+      // 結果表示更新
+      updateAnalysisResults(result.processedText, result.counts, result.ic);
+      createFrequencyChart(result.counts);
+      updateICComparison(result.ic);
+      inferTextType(result.ic);
+    } else {
+      // フォールバック処理
+      const processedText = normalize(rawText, keepAZ, removeSpaces);
+      
+      if (processedText.length < 2) {
+        showError('処理後のテキストが短すぎます');
+        return;
+      }
+      
+      analysisText = processedText;
+      
+      const counts = await getCharCounts(processedText);
+      const ic = await calcIC(processedText);
+      
+      // 結果表示更新
+      updateAnalysisResults(processedText, counts, ic);
+      createFrequencyChart(counts);
+      updateICComparison(ic);
+      inferTextType(ic);
+    }
+  } catch (error) {
+    showError('分析エラー: ' + error.message);
   }
-  
-  analysisText = processedText;
-  
-  const counts = getCharCounts(processedText);
-  const ic = calcIC(processedText);
-  
-  // 結果表示更新
-  updateAnalysisResults(processedText, counts, ic);
-  createFrequencyChart(counts);
-  updateICComparison(ic);
-  inferTextType(ic);
 }
 
 function updateAnalysisResults(text, counts, ic) {
@@ -655,7 +793,7 @@ function updateCustomTextInfo() {
   updateTextPreview();
 }
 
-function updateTextPreview() {
+async function updateTextPreview() {
   const sourceSelect = document.getElementById('monteTextSource');
   const previewElement = document.getElementById('textPreview');
   const lengthElement = document.getElementById('previewLength');
@@ -690,8 +828,13 @@ function updateTextPreview() {
   lengthElement.textContent = sourceText.length.toLocaleString();
   
   if (sourceText.length >= 2) {
-    const ic = calcIC(sourceText);
-    icElement.textContent = ic.toFixed(4);
+    try {
+      const ic = await calcIC(sourceText);
+      icElement.textContent = ic.toFixed(4);
+    } catch (error) {
+      console.error('IC calculation error in preview:', error);
+      icElement.textContent = '0.0000';
+    }
   } else {
     icElement.textContent = '0.0000';
   }
@@ -715,7 +858,7 @@ function initMonteCarloChart() {
   drawChart();
 }
 
-function startMonteCarlo() {
+async function startMonteCarlo() {
   const sourceSelect = document.getElementById('monteTextSource');
   const trialsInput = document.getElementById('monteTrials');
   const speedSelect = document.getElementById('monteSpeed');
@@ -748,9 +891,15 @@ function startMonteCarlo() {
   const speed = speedSelect.value;
   
   // 理論IC計算
-  const theoreticalIC = calcIC(sourceText);
-  convergenceChart.theoreticalIC = theoreticalIC;
-  document.getElementById('theoreticalIC').textContent = theoreticalIC.toFixed(4);
+  try {
+    const theoreticalIC = await calcIC(sourceText);
+    convergenceChart.theoreticalIC = theoreticalIC;
+    document.getElementById('theoreticalIC').textContent = theoreticalIC.toFixed(4);
+  } catch (error) {
+    console.error('Theoretical IC calculation error:', error);
+    convergenceChart.theoreticalIC = 0;
+    document.getElementById('theoreticalIC').textContent = '0.0000';
+  }
   
   // モンテカルロ開始
   monteCarloRunning = true;
@@ -762,26 +911,113 @@ function startMonteCarlo() {
   runMonteCarloLoop(sourceText, totalTrials, speed);
 }
 
-function runMonteCarloLoop(text, totalTrials, speed) {
+async function runMonteCarloLoop(text, totalTrials, speed) {
+  if (!monteCarloRunning) return;
+  
+  // Worker が利用可能で大量試行の場合は Worker を使用
+  if (workerSupported && totalTrials >= 1000) {
+    await runMonteCarloWithWorker(text, totalTrials, speed);
+  } else {
+    // フォールバック: 従来の処理
+    runMonteCarloFallback(text, totalTrials, speed);
+  }
+}
+
+// Worker を使ったモンテカルロ実行
+async function runMonteCarloWithWorker(text, totalTrials, speed) {
+  const batchSize = speed === 'slow' ? 100 : speed === 'normal' ? 500 : 1000;
+  const delay = speed === 'slow' ? 1000 : speed === 'normal' ? 300 : 100;
+  
+  let completedTrials = 0;
+  let totalMatches = 0;
+  
+  while (completedTrials < totalTrials && monteCarloRunning) {
+    const remainingTrials = totalTrials - completedTrials;
+    const currentBatchSize = Math.min(batchSize, remainingTrials);
+    
+    try {
+      const batchResult = await executeWorkerTask('monteCarloBatch', {
+        text,
+        batchSize: currentBatchSize,
+        startTrial: completedTrials
+      });
+      
+      if (!monteCarloRunning) break;
+      
+      completedTrials += currentBatchSize;
+      totalMatches += batchResult.totalMatches;
+      
+      // 最新の試行結果を保存
+      const lastResult = batchResult.results[batchResult.results.length - 1];
+      monteCarloData.trials = completedTrials;
+      monteCarloData.matches = totalMatches;
+      monteCarloData.lastTrial = {
+        pos1: lastResult.pos1,
+        pos2: lastResult.pos2,
+        char1: lastResult.char1,
+        char2: lastResult.char2,
+        match: lastResult.match
+      };
+      
+      // 収束データ更新（100回ごと）
+      if (completedTrials % 100 === 0) {
+        const currentIC = totalMatches / completedTrials;
+        monteCarloData.history = monteCarloData.history || [];
+        monteCarloData.history.push({
+          trial: completedTrials,
+          ic: currentIC
+        });
+        convergenceChart.data = monteCarloData.history;
+        drawChart();
+      }
+      
+      updateMonteCarloDisplay(text);
+      
+      // 進捗に応じて遅延
+      if (completedTrials < totalTrials) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      
+    } catch (error) {
+      console.error('Worker batch failed, switching to fallback:', error);
+      // Worker失敗時はフォールバックに切り替え
+      runMonteCarloFallback(text, totalTrials, speed, completedTrials, totalMatches);
+      break;
+    }
+  }
+  
+  if (monteCarloRunning) {
+    stopMonteCarlo();
+  }
+}
+
+// フォールバック: 従来のモンテカルロ処理
+function runMonteCarloFallback(text, totalTrials, speed, startTrials = 0, startMatches = 0) {
+  if (!monteCarloData.trials) {
+    monteCarloData.trials = startTrials;
+    monteCarloData.matches = startMatches;
+  }
+  
   if (!monteCarloRunning) return;
   
   const chunkSize = speed === 'slow' ? 1 : speed === 'normal' ? 10 : 50;
   const delay = speed === 'slow' ? 500 : speed === 'normal' ? 100 : 10;
   
   for (let i = 0; i < chunkSize && monteCarloData.trials < totalTrials && monteCarloRunning; i++) {
-    performSingleTrial(text);
+    performSingleTrialFallback(text);
   }
   
   updateMonteCarloDisplay(text);
   
   if (monteCarloData.trials < totalTrials && monteCarloRunning) {
-    setTimeout(() => runMonteCarloLoop(text, totalTrials, speed), delay);
+    setTimeout(() => runMonteCarloFallback(text, totalTrials, speed, monteCarloData.trials, monteCarloData.matches), delay);
   } else {
     stopMonteCarlo();
   }
 }
 
-function performSingleTrial(text) {
+// フォールバック用の単一試行
+function performSingleTrialFallback(text) {
   const N = text.length;
   let pos1 = Math.floor(Math.random() * N);
   let pos2 = Math.floor(Math.random() * N);
@@ -804,6 +1040,7 @@ function performSingleTrial(text) {
   // 収束データ記録（100回ごと）
   if (monteCarloData.trials % 100 === 0) {
     const currentIC = monteCarloData.matches / monteCarloData.trials;
+    if (!monteCarloData.history) monteCarloData.history = [];
     monteCarloData.history.push({
       trial: monteCarloData.trials,
       ic: currentIC
@@ -1046,7 +1283,7 @@ function initAdvanced() {
   }
 }
 
-function estimateVigenereKeyLength() {
+async function estimateVigenereKeyLength() {
   const ciphertext = document.getElementById('vigenereText').value;
   const resultElement = document.getElementById('keyLengthResult');
   
@@ -1055,6 +1292,29 @@ function estimateVigenereKeyLength() {
     return;
   }
   
+  try {
+    // Worker で処理可能な場合は使用
+    if (ciphertext.length >= 50 && workerSupported) {
+      resultElement.innerHTML = '<div style="color: var(--info);">鍵長を推定中...</div>';
+      
+      const results = await executeWorkerTask('estimateKeyLength', {
+        ciphertext,
+        maxKeyLength: 20
+      });
+      
+      displayKeyLengthResults(results, resultElement);
+    } else {
+      // フォールバック処理
+      estimateVigenereKeyLengthFallback(ciphertext, resultElement);
+    }
+  } catch (error) {
+    console.warn('Worker key length estimation failed, using fallback:', error.message);
+    estimateVigenereKeyLengthFallback(ciphertext, resultElement);
+  }
+}
+
+// フォールバック: 従来の鍵長推定
+async function estimateVigenereKeyLengthFallback(ciphertext, resultElement) {
   const normalized = normalize(ciphertext, true, true);
   
   if (normalized.length < 20) {
@@ -1077,7 +1337,8 @@ function estimateVigenereKeyLength() {
       }
       
       if (columnText.length >= 3) {
-        avgIC += calcIC(columnText);
+        const columnIC = await calcIC(columnText);
+        avgIC += columnIC;
         validColumns++;
       }
     }
@@ -1090,7 +1351,11 @@ function estimateVigenereKeyLength() {
   
   // 結果をIC値でソート（高い順）
   results.sort((a, b) => b.avgIC - a.avgIC);
-  
+  displayKeyLengthResults(results, resultElement);
+}
+
+// 鍵長推定結果の表示
+function displayKeyLengthResults(results, resultElement) {
   let html = '<h4>鍵長推定結果</h4><table style="width: 100%; border-collapse: collapse;">';
   html += '<tr style="background: var(--bg-accent);"><th style="padding: 8px; border: 1px solid var(--border);">鍵長</th><th style="padding: 8px; border: 1px solid var(--border);">平均IC</th><th style="padding: 8px; border: 1px solid var(--border);">可能性</th></tr>';
   
@@ -1119,6 +1384,9 @@ function estimateVigenereKeyLength() {
 // 初期化
 document.addEventListener('DOMContentLoaded', () => {
   try {
+    // Web Worker を先に初期化
+    initWorker();
+    
     initTabs();
     initStepLearning();
     initSampleAnalysis();
@@ -1126,7 +1394,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAdvanced();
     initHelpModal(); // すべてのタブでヘルプモーダルを使用可能に
     
-    console.log('IC Learning Visualizer v2.0 初期化完了');
+    console.log('IC Learning Visualizer v2.1 (with Web Workers) 初期化完了');
   } catch (error) {
     console.error('初期化エラー:', error);
     showError('アプリケーションの初期化に失敗しました');

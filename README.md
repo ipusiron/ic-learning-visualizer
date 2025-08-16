@@ -113,19 +113,25 @@ ICの概念は暗号解読に役立ちます。
 
 👉 **[ICの数学的詳細](about_ic.md)**
 
+### パフォーマンス改善記録
+
+👉 **[Web Workers実装による非同期処理化](PERFORMANCE_IMPROVEMENTS.md)**
+
 ---
 
 ## 📁 ディレクトリー構造
 
 ```
 ic-learning-visualizer/
-├── index.html          # メインのHTMLファイル（教育版タブ型UI）
-├── script.js           # JavaScript機能（全タブ対応）
-├── style.css           # スタイルシート（ライトテーマ）
-├── about_ic.md         # ICの数学的詳細解説
-├── CLAUDE.md           # Claude Code用プロジェクト文書
-├── README.md           # このファイル
-├── LICENSE             # MITライセンス
+├── index.html                    # メインのHTMLファイル（教育版タブ型UI）
+├── script.js                     # JavaScript機能（全タブ対応）
+├── worker.js                     # Web Worker（大量データ処理用）
+├── style.css                     # スタイルシート（ライトテーマ）
+├── about_ic.md                   # ICの数学的詳細解説
+├── PERFORMANCE_IMPROVEMENTS.md   # パフォーマンス改善記録
+├── CLAUDE.md                     # Claude Code用プロジェクト文書
+├── README.md                     # このファイル
+├── LICENSE                       # MITライセンス
 └── assets/
     └── screenshot.png  # ツールのスクリーンショット
 ```
