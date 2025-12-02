@@ -1,12 +1,39 @@
-
 <!--
 ---
-title: IC Learning Visualizer
-category: classic-crypto
-difficulty: 1
-description: An educational tool to intuitively understand the Index of Coincidence (IC) through histograms and probability experiments.
-tags: [cryptography, classic, statistics, visualization, education]
-demo: https://ipusiron.github.io/ic-learning-visualizer/
+id: day047
+slug: ic-learning-visualizer
+
+title: "IC Learning Visualizer"
+
+subtitle_ja: "一致指数をビジュアル理解するツール"
+subtitle_en: "Visual learning tool for Index of Coincidence"
+
+description_ja: "頻度ヒストグラムとモンテカルロ実験を通じて、一致指数（IC）を直感的に理解するための教育ツール"
+description_en: "An educational tool to intuitively understand the Index of Coincidence (IC) through histograms and probability experiments"
+
+category_ja:
+  - 古典暗号
+  - 暗号解析
+category_en:
+  - Classical Cryptography
+  - Cryptanalysis
+
+difficulty: 3
+
+tags:
+  - cryptography
+  - index-of-coincidence
+  - vigenere
+  - friedman-test
+  - monte-carlo
+  - visualization
+  - statistics
+  - education
+
+repo_url: "https://github.com/ipusiron/ic-learning-visualizer"
+demo_url: "https://ipusiron.github.io/ic-learning-visualizer/"
+
+hub: true
 ---
 -->
 

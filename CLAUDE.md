@@ -16,42 +16,51 @@ This is a static web application with no package.json or build system:
 ## Architecture
 
 ### Core Files
-- `index.html`: Main HTML structure with semantic sections for input, results, and Monte Carlo simulation
-- `script.js`: All application logic in vanilla JavaScript
-- `style.css`: Custom dark theme styling with CSS variables
+- `index.html`: Main HTML structure with tab-based UI (4 tabs: learning, analysis, Monte Carlo, advanced)
+- `script.js`: All application logic (~1400 lines) with async/await patterns
+- `worker.js`: Web Worker for background processing of heavy computations
+- `style.css`: Light theme styling with CSS variables
 
 ### Key Components
 
-#### Text Processing (script.js:5-10)
+#### Text Processing & Security (script.js:35-65, 170-182)
+- `escapeHtml()`: Sanitizes user input for safe DOM rendering
+- `validateInput()`: Checks for dangerous patterns (XSS prevention)
 - `normalize()`: Preprocesses text with configurable options (A-Z only, remove spaces/symbols)
-- Handles Unicode properly for international characters
 
-#### Statistical Calculations (script.js:13-34)
-- `freqCounts()`: Generates character frequency distribution for A-Z
+#### Statistical Calculations (script.js:184-264)
 - `calcIC()`: Computes Index of Coincidence using the formula IC = Σ(ni*(ni-1))/(N*(N-1))
-- Also calculates related metrics: sumPi2 for probability distribution
+- `calcICFallback()`: Synchronous fallback when Web Worker unavailable
+- `getCharCounts()` / `getCharCountsFallback()`: Character frequency distribution for A-Z
 
-#### Visualization (script.js:37-53)
-- `renderFreqChart()`: Creates dynamic bar chart showing character frequencies
-- Uses CSS-based charting with calculated heights proportional to frequency
+#### Web Worker Architecture (script.js:67-135, worker.js)
+- Heavy computations offloaded to background thread for UI responsiveness
+- `initWorker()`: Initializes Web Worker with error handling
+- `executeWorkerTask()`: Promise-based async task execution with 30s timeout
+- Worker handles: IC calculation, character counts, text analysis, Monte Carlo batches, key length estimation
 
-#### Monte Carlo Simulation (script.js:104-172)
-- Implements sampling experiment to demonstrate IC concept intuitively
-- `mcOnce()`: Single trial picking two random positions
-- `runMC()`: Batch processing with requestAnimationFrame for smooth UI
-- Progressive updates showing convergence to theoretical IC value
+#### Tab-Based UI (script.js:266-561)
+- **Step Learning** (`initStepLearning()`): Progressive educational walkthrough with quizzes
+- **Sample Analysis** (`initSampleAnalysis()`, `performAnalysis()`): Text analysis with frequency charts
+- **Monte Carlo** (`initMonteCarlo()`): Probability experiments with convergence visualization
+- **Advanced** (`initAdvanced()`): Vigenère cipher key length estimation (Friedman test)
+
+#### Visualization (script.js:656-684, 1099-1242)
+- `createFrequencyChart()`: Dynamic A-Z frequency bar chart
+- `drawChart()`: Canvas-based convergence graph for Monte Carlo simulation
 
 ### UI State Management
-- Global variables for current text and Monte Carlo state (mcTrials, mcHits, mcRunning)
-- Real-time UI updates through dedicated update functions
-- Progress bar visualization for long-running simulations
+- Global state variables: `currentStep`, `currentTab`, `analysisText`, `monteCarloRunning`, `convergenceChart`
+- `pendingWorkerTasks`: Map tracking async Worker operations
+- Real-time UI updates through dedicated update functions per tab
 
 ## Important Notes
 
 - Pure client-side application - all processing happens in browser
-- No external dependencies or CDN libraries
-- Responsive design with CSS Grid, breakpoint at 900px
-- Dark theme optimized for readability with high contrast colors
+- No external dependencies or CDN libraries (uses MathJax via CDN for formula rendering in documentation only)
+- Web Workers used for computations on texts >1000 characters
+- Responsive design with CSS Grid
+- Input validation limits: max 100,000 characters, dangerous patterns blocked (XSS prevention)
 - Educational focus: includes mathematical explanations and reference values for IC
 
 ## Future Enhancement Tasks
