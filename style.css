@@ -17,7 +17,7 @@
 
   --text-primary: #1e293b;
   --text-secondary: #475569;
-  --text-muted: #64748b;
+  --text-muted: #5f6b7f;
   --accent-text: #1d4ed8;
   --success-text: #15803d;
   --error-text: #b91c1c;
@@ -743,8 +743,11 @@ body {
 }
 
 .quiz-options label {
-  display: block;
-  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 0;
   cursor: pointer;
 }
 
@@ -1663,12 +1666,6 @@ body {
 
 .quiz-item {
   border: none;
-}
-
-.quiz-options label {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
 }
 
 .resources {
