@@ -352,8 +352,13 @@ ic-learning-visualizer/
 │   ├── screenshot3.png     # スクリーンショット（鍵長推定）
 │   ├── screenshot4.png     # スクリーンショット（鍵長とICの実験）
 │   └── screenshot5.png     # スクリーンショット（ステップ学習・ダーク）
+├── corpus/                 # ばらつきの実験に使う英文
+│   ├── NOTICE.md           # 英文の出典・SHA-256
+│   └── eval-pg98.txt       # A Tale of Two Cities（#98）の英字だけの抜粋
 ├── js/                     # 画面以外のモジュール
 │   ├── chart.js            # グラフの描画（収束・周期ごとのIC・鍵長とICの実験）
+│   ├── ciphers.js          # 暗号の種類の比較に使う古典暗号（単一換字・列転置・自動鍵）
+│   ├── export.js           # 結果の書き出し（CSV・JSON）
 │   ├── file-check.js       # file://で起動できなかったときの案内
 │   ├── i18n.js             # 画面の言語（日本語・英語）の決定と切り替え
 │   ├── ic-core.js          # ICの計算（正規化・IC・周期ごとのIC・鍵長の候補・区分・モンテカルロ・鍵長とICの実験）
@@ -365,6 +370,8 @@ ic-learning-visualizer/
 │   ├── theme-init.js       # 読み込みの最初にテーマを当てる
 │   └── theme.js            # ライト／ダークの切り替え
 ├── test/                   # テスト（node:test）
+│   ├── analysis.test.js    # κテスト・列の中身・フリードマンの式・乱数の種・書き出し
+│   ├── ciphers.test.js     # 単一換字・列転置・自動鍵と、暗号の種類の比較
 │   ├── contrast.test.js    # 配色のコントラスト・入力欄と操作の大きさ
 │   ├── core.test.js        # ICの計算・正規化・鍵長・区分・モンテカルロ・既知解答
 │   ├── experiment.test.js  # 鍵長とICの実験・近似式・ばらつきの帯
@@ -374,7 +381,8 @@ ic-learning-visualizer/
 │   ├── links.test.js       # ほかのツールへのリンク・URLの受け取り
 │   ├── messages.test.js    # 文言の置き場所とキー
 │   ├── readme.test.js      # 日英のREADMEの表・構成・ツリー・画像
-│   └── samples.test.js     # サンプルの性質・ステップの例・クイズの正解
+│   ├── samples.test.js     # サンプルの性質・ステップの例・クイズの正解
+│   └── spread.test.js      # 同梱の英文と、文字数とばらつき
 ├── .gitignore              # Gitの除外設定
 ├── .nojekyll               # GitHub PagesでJekyllを使わない指定
 ├── CLAUDE.md               # Claude Code向けの開発メモ

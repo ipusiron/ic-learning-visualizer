@@ -241,3 +241,67 @@ export function sigmaBand(p, n, k = 2) {
   const d = k * standardError(p, n);
   return [Math.max(0, p - d), Math.min(1, p + d)];
 }
+
+// κテスト（ずらして重ねる）: 文字列を自分自身と k 文字ずらして重ねたとき、同じ文字が重なる割合。{ k, rate, matches, overlap }
+export function kappa(text, k) {
+  const chars = [...text];
+  const overlap = chars.length - k;
+  if (k < 1 || overlap < 1) return { k, rate: 0, matches: 0, overlap: Math.max(0, overlap) };
+  let matches = 0;
+  for (let i = 0; i < overlap; i++) if (chars[i] === chars[i + k]) matches += 1;
+  return { k, rate: matches / overlap, matches, overlap };
+}
+
+// κテストの曲線（k＝1〜max。鍵長の候補と同じく、文字数÷3まで）
+export function kappaCurve(text, max = MAX_PERIOD) {
+  const top = Math.min(max, Math.floor([...text].length / MIN_COLUMN_LETTERS));
+  const out = [];
+  for (let k = 1; k <= top; k++) out.push(kappa(text, k));
+  return out;
+}
+
+// 周期 L で分けた列の中身: { index, letters, n, ic, counts（A〜Zの26個） }
+export function columnDetails(text, L) {
+  return columnsOf(text, L).map((col, i) => ({
+    index: i + 1, letters: col, n: [...col].length, ic: indexOfCoincidence(col), counts: letterCounts(col).counts
+  }));
+}
+
+// フリードマンの式（鍵長の概算）: L ≈ (κp − κr)N / ((N − 1)IC − κr·N + κp)。κp は英語の IC（dCode の値）、κr は 1/26
+export const ENGLISH_KAPPA = 0.0667;
+export function friedmanEstimate(text, kp = ENGLISH_KAPPA, kr = RANDOM_IC) {
+  const { N, ic } = icDetail(text);
+  const numerator = (kp - kr) * N;
+  const denominator = (N - 1) * ic - kr * N + kp;
+  return { N, ic, kp, kr, numerator, denominator, estimate: denominator > 0 ? numerator / denominator : Infinity };
+}
+
+// 文字数とばらつき: 英字の列から N 字の窓を trials 回取り、IC の分布と区分の割合を返す
+export function lengthSpread(letters, N, trials, rng) {
+  if (letters.length < N || N < 2) return null;
+  const values = [];
+  const shares = { tooShort: 0, flat: 0, middle: 0, language: 0, skewed: 0 };
+  for (let t = 0; t < trials; t++) {
+    const start = Math.floor(rng() * (letters.length - N + 1));
+    const ic = indexOfCoincidence(letters.slice(start, start + N));
+    values.push(ic);
+    shares[classifyIC(ic, N).band] += 1;
+  }
+  values.sort((a, b) => a - b);
+  const q = (p) => values[Math.min(values.length - 1, Math.floor(p * values.length))];
+  for (const k of Object.keys(shares)) shares[k] /= trials;
+  return { N, trials, values, p5: q(0.05), p50: q(0.5), p95: q(0.95), shares };
+}
+
+// 乱数の種の入力（空欄なら null＝毎回ちがう乱数）。0〜4294967295 の整数だけを受け付け、それ以外は NaN
+export function parseSeed(raw) {
+  const s = String(raw ?? '').trim();
+  if (!s) return null;
+  if (!/^\d{1,10}$/.test(s) || Number(s) > 4294967295) return NaN;
+  return Number(s);
+}
+
+// 種があれば決まった並びの乱数、なければ Math.random
+export function makeRng(seed) {
+  return Number.isInteger(seed) ? xorshift32(seed) : Math.random;
+}

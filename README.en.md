@@ -313,8 +313,13 @@ ic-learning-visualizer/
 │   ├── screenshot3.png     # Screenshot for the Japanese README (key length estimation)
 │   ├── screenshot4.png     # Screenshot for the Japanese README (key length and IC)
 │   └── screenshot5.png     # Screenshot for the Japanese README (step by step, dark)
+├── corpus/                 # English text for the spread experiment
+│   ├── NOTICE.md           # Source and SHA-256 of the English text
+│   └── eval-pg98.txt       # Letters-only excerpt of A Tale of Two Cities (#98)
 ├── js/                     # Modules other than the screen
 │   ├── chart.js            # Charts (convergence, IC by period, key length and IC)
+│   ├── ciphers.js          # Classical ciphers for the cipher comparison (substitution, columnar, autokey)
+│   ├── export.js           # Exporting results (CSV, JSON)
 │   ├── file-check.js       # Notice when the tool cannot start from file://
 │   ├── i18n.js             # Choosing and switching the language (Japanese, English)
 │   ├── ic-core.js          # IC logic (normalization, IC, periodic IC, key length, bands, Monte Carlo, key length experiment)
@@ -326,6 +331,8 @@ ic-learning-visualizer/
 │   ├── theme-init.js       # Applies the theme at the start of loading
 │   └── theme.js            # Light/dark switching
 ├── test/                   # Tests (node:test)
+│   ├── analysis.test.js    # Kappa test, columns, Friedman formula, seeds, export
+│   ├── ciphers.test.js     # Substitution, columnar, autokey and the cipher comparison
 │   ├── contrast.test.js    # Color contrast, sizes of fields and controls
 │   ├── core.test.js        # IC, normalization, key length, bands, Monte Carlo, known answers
 │   ├── experiment.test.js  # Key length experiment, approximation, variation band
@@ -335,7 +342,8 @@ ic-learning-visualizer/
 │   ├── links.test.js       # Links to other tools, URL parameters
 │   ├── messages.test.js    # Where strings live and their keys
 │   ├── readme.test.js      # Tables, structure, tree and images of both READMEs
-│   └── samples.test.js     # Properties of the samples, step examples, quiz answer
+│   ├── samples.test.js     # Properties of the samples, step examples, quiz answer
+│   └── spread.test.js      # Bundled English text and the length spread
 ├── .gitignore              # Git ignore settings
 ├── .nojekyll               # Tells GitHub Pages not to use Jekyll
 ├── CLAUDE.md               # Development notes for Claude Code
