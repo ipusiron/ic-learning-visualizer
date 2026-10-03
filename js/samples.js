@@ -63,6 +63,12 @@ export const STEP3_PATTERNS = ['ABCDEFGHIJ', 'AABCDEFGHI', 'AABBCCDDEE', 'AAAAAA
 // クイズ（正解の選択肢は IC をロジックで計算して確かめる。test/samples.test.js）
 export const QUIZ1_OPTIONS = { a: 'ABCDEF', b: 'AAAAAA', c: 'ABABAB' };
 
+// クイズの正解（選んだ理由が成り立つことは、test/samples.test.js でロジックから確かめる）
+export const QUIZ_ANSWERS = { 1: 'b', 2: 'b', 3: 'c', 4: 'a', 5: 'a', 6: 'c', 7: 'b', 8: 'c' };
+
+// ステップ5の例（Σp² と IC の差。もう1行は英語の文章のサンプル）
+export const SUMSQ_WORDS = ['HELLO', 'ABABAB'];
+
 // 言語別の IC（出典の値）。friedman＝Friedman & Callimahos『Military Cryptanalytics』の正規化値（×1/26 で IC）、
 // dcode＝dCode の Index of Coincidence のページの表。出典によって値が違うので、両方を示す
 export const LANGUAGE_IC = [

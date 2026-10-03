@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { MESSAGES, t } from '../js/messages.js';
-import { SAMPLE_ORDER, STEP3_PATTERNS, LANGUAGE_IC } from '../js/samples.js';
+import { SAMPLE_ORDER, STEP3_PATTERNS, LANGUAGE_IC, QUIZ_ANSWERS } from '../js/samples.js';
 
 const read = (f) => fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
 const LOGIC = ['script.js', 'js/ic-core.js', 'js/samples.js', 'js/chart.js', 'js/tabs.js', 'js/theme.js', 'js/links.js', 'js/params.js',
@@ -30,7 +30,7 @@ test('script.js・theme.js が使うキーは、すべて日本語の辞書に�
     keys.add(`step.${k}`);
     keys.add(`step.${k}Desc`);
   }
-  for (const n of [1, 2]) for (const r of ['correct', 'wrong']) keys.add(`quiz.${r}${n}`);
+  for (const n of Object.keys(QUIZ_ANSWERS)) for (const r of ['correct', 'wrong']) keys.add(`quiz.${r}${n}`);
   for (const s of [...SAMPLE_ORDER, 'custom']) keys.add(`sample.${s}`);
   for (const b of ['tooShort', 'flat', 'middle', 'language', 'skewed']) {
     keys.add(`band.${b}`);
@@ -39,6 +39,15 @@ test('script.js・theme.js が使うキーは、すべて日本語の辞書に�
   for (const l of LANGUAGE_IC) keys.add(`lang.${l.id}`);
   for (const k of keys) assert.ok(k in MESSAGES.ja, k);
   assert.ok(keys.size > 60, String(keys.size));
+});
+
+test('辞書の中で同じキーを二度書かない（あとの定義が前の文言を黙って上書きするため）', () => {
+  const src = read('js/messages.js');
+  for (const [start, end] of [['const JA = {', 'const EN = {'], ['const EN = {', 'export const MESSAGES']]) {
+    const keys = [...src.slice(src.indexOf(start), src.indexOf(end)).matchAll(/^ {2}'([\w.]+)':/gm)].map((m) => m[1]);
+    assert.ok(keys.length > 400, String(keys.length));
+    assert.deepEqual(keys.filter((k, i) => keys.indexOf(k) !== i), [], start);
+  }
 });
 
 test('置き場所 {name} を値で埋める。未知のキーはキーのまま', () => {

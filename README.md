@@ -382,7 +382,8 @@ ic-learning-visualizer/
 │   ├── messages.test.js    # 文言の置き場所とキー
 │   ├── readme.test.js      # 日英のREADMEの表・構成・ツリー・画像
 │   ├── samples.test.js     # サンプルの性質・ステップの例・クイズの正解
-│   └── spread.test.js      # 同梱の英文と、文字数とばらつき
+│   ├── spread.test.js      # 同梱の英文と、文字数とばらつき
+│   └── steps.test.js       # ステップ5〜8の値と、クイズ8問の正解の理由
 ├── .gitignore              # Gitの除外設定
 ├── .nojekyll               # GitHub PagesでJekyllを使わない指定
 ├── CLAUDE.md               # Claude Code向けの開発メモ

@@ -343,7 +343,8 @@ ic-learning-visualizer/
 │   ├── messages.test.js    # Where strings live and their keys
 │   ├── readme.test.js      # Tables, structure, tree and images of both READMEs
 │   ├── samples.test.js     # Properties of the samples, step examples, quiz answer
-│   └── spread.test.js      # Bundled English text and the length spread
+│   ├── spread.test.js      # Bundled English text and the length spread
+│   └── steps.test.js       # Values in steps 5 to 8 and the reasons for the eight quiz answers
 ├── .gitignore              # Git ignore settings
 ├── .nojekyll               # Tells GitHub Pages not to use Jekyll
 ├── CLAUDE.md               # Development notes for Claude Code

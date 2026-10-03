@@ -4,11 +4,13 @@
 import {
   MAX_TEXT, RANDOM_IC, KEY_IC_THRESHOLD, MIN_VERDICT, normalizeText, letterCounts, icDetail, breakdownRows, keyLengthCandidates,
   classifyIC, runTrials, historyStep, formatIC, standardError, expectedRate, keyLengthExperiment, ALPHABET, kappa, kappaCurve, columnDetails,
-  friedmanEstimate, lengthSpread, parseSeed, makeRng, sigmaBand, BANDS, ENGLISH_KAPPA
+  friedmanEstimate, lengthSpread, parseSeed, makeRng, sigmaBand, BANDS, ENGLISH_KAPPA, periodicIC, approxPolyIC
 } from './js/ic-core.js';
 import { compareCiphers } from './js/ciphers.js';
 import { toCsv, toJson, exportName } from './js/export.js';
-import { SAMPLES, VIGENERE_KEY, VIGENERE_PLAIN, ENGLISH, STEP3_PATTERNS, QUIZ1_OPTIONS, LANGUAGE_IC } from './js/samples.js';
+import {
+  SAMPLES, VIGENERE_KEY, VIGENERE_PLAIN, ENGLISH, STEP3_PATTERNS, QUIZ1_OPTIONS, QUIZ_ANSWERS, SUMSQ_WORDS, LANGUAGE_IC
+} from './js/samples.js';
 import { t, setLanguage, getLanguage } from './js/messages.js';
 import { initialLanguage, saveLanguage, applyStaticText, useLanguage } from './js/i18n.js';
 import { initTabs } from './js/tabs.js';
@@ -19,7 +21,9 @@ import { readParams } from './js/params.js';
 
 const $ = (sel) => document.querySelector(sel);
 const fmt = (n) => n.toLocaleString('en-US');
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 8;
+const STEP6_LENGTHS = [1, 2, 3, 5, 10, 20];
+const STEP7_MAX_PERIOD = 12;
 const SIMPLE_MAX = 30;
 const KEY_MIN_LETTERS = 20;
 const KEY_ROWS = 10;
@@ -41,7 +45,8 @@ const state = {
   compare: null,
   corpus: null,
   periodicAt: null,
-  kappaAt: null
+  kappaAt: null,
+  quiz: {}
 };
 const CORPUS_URL = 'corpus/eval-pg98.txt';
 const SPREAD_MIN = 100;
@@ -188,15 +193,73 @@ function renderLanguageComparison() {
   $('#languageComparison').replaceChildren(...items);
 }
 
+// ステップ5: 同じ位置も選ぶ確率（Σp²）と IC を並べる
+function renderSumSq() {
+  const english = normalizeText(SAMPLES.english).text;
+  const rows = [...SUMSQ_WORDS.map((w) => ({ label: w, text: w })), { label: t('step.sumSqEnglish'), text: english }].map((r) => el('tr', {}, [
+    el('th', { scope: 'row', text: r.label }),
+    el('td', { text: fmt(r.text.length) }),
+    el('td', { text: formatIC(expectedRate(r.text, true)) }),
+    el('td', { text: formatIC(expectedRate(r.text)) })
+  ]));
+  $('#sumSqTable tbody').replaceChildren(...rows);
+}
+
+// 名前・棒・値の1行（ステップ6・7）
+function icRow(label, value, cls) {
+  const bar = el('span', { className: `ic-bar ${cls}` });
+  setBar(bar, value, 0.08);
+  return el('div', { className: 'ic-row' }, [
+    el('span', { className: 'ic-row-name', text: label }),
+    el('span', { className: 'ic-track', 'aria-hidden': 'true' }, [bar]),
+    el('span', { className: 'ic-row-value', text: formatIC(value) })
+  ]);
+}
+
+// ステップ6: 鍵長ごとの近似式の値（棒）と、でたらめな文字列の 1/26
+function renderKeyLengthDemo() {
+  const rows = STEP6_LENGTHS.map((L) => icRow(t('step.keyLength', { L }), approxPolyIC(ENGLISH_IC, L), L === 1 ? 'english' : 'cipher'));
+  rows.push(icRow(t('step.keyLengthRandom'), RANDOM_IC, 'random'));
+  $('#keyLengthDemo').replaceChildren(...rows);
+}
+
+// ステップ7: ヴィジュネル暗号のサンプルを周期1〜12で分けたときの列の IC の平均
+function renderPeriodDemo() {
+  const curve = periodicIC(normalizeText(SAMPLES.vigenere).text, STEP7_MAX_PERIOD);
+  const rows = curve.map((p) => icRow(t('step.period', { k: p.k }), p.ic, p.ic >= KEY_IC_THRESHOLD ? 'english' : 'cipher'));
+  $('#periodDemo').replaceChildren(...rows);
+}
+
+// クイズ: 答え合わせした問題ごとに、正解かどうかを覚えて正答数を出す
+function renderScore() {
+  const total = Object.keys(QUIZ_ANSWERS).length;
+  const done = Object.keys(state.quiz).length;
+  const ok = Object.values(state.quiz).filter(Boolean).length;
+  if (!done) return say($('#quizScore'));
+  say($('#quizScore'), ok === total ? 'quiz.scoreAll' : 'quiz.score', { ok, done, total });
+}
+
 function checkQuiz(n) {
   const out = $(`#result${n}`);
   const chosen = document.querySelector(`input[name="q${n}"]:checked`);
   out.classList.remove('correct', 'incorrect');
   if (!chosen) return say(out, 'quiz.choose');
-  const ok = chosen.value === 'b';
+  const ok = chosen.value === QUIZ_ANSWERS[n];
+  state.quiz[n] = ok;
   out.classList.add(ok ? 'correct' : 'incorrect');
   const c = formatIC(icDetail(QUIZ1_OPTIONS.c).ic);
   say(out, `quiz.${ok ? 'correct' : 'wrong'}${n}`, { c });
+  renderScore();
+}
+
+function resetQuiz() {
+  for (const input of document.querySelectorAll('.quiz-options input')) input.checked = false;
+  for (const out of document.querySelectorAll('.quiz-result')) {
+    out.classList.remove('correct', 'incorrect');
+    say(out);
+  }
+  state.quiz = {};
+  renderScore();
 }
 
 function initSteps() {
@@ -207,8 +270,12 @@ function initSteps() {
     if (e.key === 'Enter' && !e.isComposing) calculateSimple();
   });
   for (const b of document.querySelectorAll('.btn-check')) b.addEventListener('click', () => checkQuiz(b.dataset.quiz));
+  $('#quizReset').addEventListener('click', resetQuiz);
   renderPatterns();
   renderLanguageComparison();
+  renderSumSq();
+  renderKeyLengthDemo();
+  renderPeriodDemo();
   calculateSimple();
   showStep(1);
 }
@@ -776,13 +843,15 @@ function renderExperiment() {
   drawExperimentChart();
 }
 
+function loadVigenereSample() {
+  $('#vigenereText').value = SAMPLES.vigenere;
+  estimateKeyLength();
+}
+
 function initAdvanced() {
   renderLanguageTable();
   $('#estimateKeyLength').addEventListener('click', estimateKeyLength);
-  $('#loadVigenereSample').addEventListener('click', () => {
-    $('#vigenereText').value = SAMPLES.vigenere;
-    estimateKeyLength();
-  });
+  $('#loadVigenereSample').addEventListener('click', loadVigenereSample);
   $('#runExperiment').addEventListener('click', runExperiment);
   $('#runCompare').addEventListener('click', runCompare);
   $('#columnPeriod').addEventListener('change', () => selectColumn(Number($('#columnPeriod').value)));
@@ -871,6 +940,9 @@ function rerenderAll() {
   refreshThemeButton($('#btnTheme'));
   renderPatterns();
   renderLanguageComparison();
+  renderSumSq();
+  renderKeyLengthDemo();
+  renderPeriodDemo();
   renderLanguageTable();
   renderAnalysis();
   renderCustomInfo();
@@ -903,6 +975,12 @@ function init() {
   initAdvanced();
   initHelp();
   const tabs = initTabs($('.tabs'), redrawCharts);
+  // ステップ7から、応用タブでサンプルの鍵長を推定する（入力欄へ移る）
+  $('#tryKeyLength').addEventListener('click', () => {
+    tabs.select('advanced');
+    loadVigenereSample();
+    $('#vigenereText').focus();
+  });
   // テーマが変わったら、canvas の色を描き直す
   new MutationObserver(redrawCharts).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redrawCharts);

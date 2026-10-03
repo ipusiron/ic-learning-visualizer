@@ -69,7 +69,8 @@ test('画面の要素の id がそろっている（それぞれ1つだけ）', 
     'spreadSummary', 'spreadTable', 'exportSpreadCsv', 'exportSpreadJson', 'monteSeed', 'exportMonteCsv', 'exportMonteJson', 'compareSource',
     'compareKeyLength', 'compareSeed', 'runCompare', 'compareStatus', 'compareResult', 'compareTable', 'exportCompareCsv', 'exportCompareJson',
     'experimentSeed', 'exportExperimentCsv', 'exportExperimentJson', 'exportPeriodicCsv', 'exportPeriodicJson', 'columnPeriod', 'columnSummary',
-    'columnView', 'kappaShift', 'kappaRows', 'kappaInfo', 'kappaCanvas', 'friedmanFormula', 'friedmanVerdict'];
+    'columnView', 'kappaShift', 'kappaRows', 'kappaInfo', 'kappaCanvas', 'friedmanFormula', 'friedmanVerdict', 'sumSqTable', 'keyLengthDemo',
+    'periodDemo', 'tryKeyLength', 'result3', 'result4', 'result5', 'result6', 'result7', 'result8', 'quizScore', 'quizReset'];
   for (const id of ids) assert.equal(html.split(`id="${id}"`).length - 1, 1, id);
 });
 
@@ -93,7 +94,7 @@ test('ボタンには type、入力欄にはラベル、外部リンクには no
   for (const m of html.matchAll(/<input type="(checkbox|radio)"[^>]*>/g)) assert.ok(html.includes(`<label>${m[0]}`), m[0]);
   for (const m of html.matchAll(/<a\b[^>]*href="https?:[^"]*"[^>]*>/g)) assert.match(m[0], /rel="noopener noreferrer"/, m[0]);
   for (const id of ['simpleStatus', 'analyzeStatus', 'monteStatus', 'keyLengthStatus', 'experimentStatus', 'typeInference', 'result1', 'result2',
-    'spreadStatus', 'compareStatus', 'columnSummary', 'kappaInfo']) {
+    'spreadStatus', 'compareStatus', 'columnSummary', 'kappaInfo', 'quizScore']) {
     assert.match(html, new RegExp(`id="${id}"[^>]*aria-live="polite"`), id);
   }
   assert.match(html, /<dialog id="helpDialog" class="modal" aria-labelledby="helpTitle">/);

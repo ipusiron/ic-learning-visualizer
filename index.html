@@ -68,7 +68,7 @@
         <div class="step-container">
           <div class="step-nav">
             <button type="button" id="prevStep" class="btn-nav" disabled data-i18n="ui.prev">← 前へ</button>
-            <span class="step-indicator" aria-live="polite"><span data-i18n="ui.step">ステップ</span> <span id="currentStep">1</span> / <span id="totalSteps">5</span></span>
+            <span class="step-indicator" aria-live="polite"><span data-i18n="ui.step">ステップ</span> <span id="currentStep">1</span> / <span id="totalSteps">8</span></span>
             <button type="button" id="nextStep" class="btn-nav" data-i18n="ui.next">次へ →</button>
           </div>
 
@@ -183,9 +183,51 @@
             </div>
           </div>
 
-          <!-- ステップ5: クイズ -->
+          <!-- ステップ5: Σp² と IC（同じ位置を選ぶか） -->
           <div class="step" data-step="5" hidden>
-            <h3 data-i18n="ui.step5Title">ステップ5: 理解度チェック</h3>
+            <h3 data-i18n="ui.step5Title">ステップ5: 同じ位置を選ばない意味（Σp² とIC）</h3>
+            <p data-i18n="ui.step5Intro">2文字を選ぶとき、同じ位置を2回選んでもよいことにすると、同じ文字になる確率は、各文字の割合 p＝n÷N の2乗の和（Σp²）になります。ICは同じ位置を選ばないので、自分自身との一致が入らず、Σp² より少し小さくなります。</p>
+            <p class="formula-line" data-i18n="ui.step5Formula">IC ＝ (N × Σp² − 1) ÷ (N − 1)</p>
+            <div class="table-wrap">
+              <table class="data-table" id="sumSqTable">
+                <thead>
+                  <tr>
+                    <th scope="col" data-i18n="ui.colText">テキスト</th><th scope="col" data-i18n="ui.colLetters">文字数 N</th>
+                    <th scope="col" data-i18n="ui.colSumSq">Σp²（同じ位置も選ぶ）</th><th scope="col" data-i18n="ui.colIcNoRepeat">IC（同じ位置は選ばない）</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p class="note" data-i18n="ui.step5Note">文字数が少ないほど差は大きく、長い文ではほとんど同じ値になります。「モンテカルロ」タブで「同じ位置も選ぶ（復元抽出）」に印を付けると、一致する割合が Σp² に近づくことを確かめられます。</p>
+          </div>
+
+          <!-- ステップ6: 鍵が長いほど IC が下がる理由 -->
+          <div class="step" data-step="6" hidden>
+            <h3 data-i18n="ui.step6Title">ステップ6: 鍵が長いほどICが下がる理由</h3>
+            <p data-i18n="ui.step6Intro">鍵長Lのヴィジュネル暗号では、文字の位置によって、ずらす量がL通りあります。暗号文から2文字を選ぶと、次の2つの場合に分かれます。</p>
+            <ul class="step-list">
+              <li data-i18n="ui.step6Same">約1/Lの確率で、同じずらし量の2文字になる。平文の2文字が同じときだけ一致するので、一致する確率は言語のIC（英語で約0.0667）</li>
+              <li data-i18n="ui.step6Diff">残りの約(L−1)/Lは、ずらし量が違う2文字になる。鍵の文字をでたらめに選んだとすると、一致する確率は平均で1/26</li>
+            </ul>
+            <p class="formula-line" data-i18n="ui.step6Formula">IC ≈ (1/L) × 0.0667 ＋ ((L−1)/L) × (1/26)</p>
+            <div class="ic-rows" id="keyLengthDemo"></div>
+            <p class="note" data-i18n="ui.step6Note">Lが大きいほど、ICは1/26に近づきます。実際の暗号文で確かめるには、「応用・暗号解析」タブの「鍵長とICの実験」を使います（実験の平均と近似式を並べて表示します）。</p>
+          </div>
+
+          <!-- ステップ7: 周期で分けると IC が戻る理由 -->
+          <div class="step" data-step="7" hidden>
+            <h3 data-i18n="ui.step7Title">ステップ7: 周期で分けるとICが戻る理由</h3>
+            <p data-i18n="ui.step7Intro">暗号文を鍵長おきに拾って列に分けると、1つの列の文字は、すべて同じずらし量で暗号化されています。1つの列はシーザー暗号と同じで、文字の名前を付け替えただけなので、出現回数の組み合わせは平文の列と変わらず、ICも言語の値に戻ります。</p>
+            <p data-i18n="ui.step7Demo">下は、鍵 LEMON（鍵長5）で暗号化したサンプルを、周期1〜12で列に分けたときの、列のICの平均です（緑は0.058以上）。</p>
+            <div class="ic-rows" id="periodDemo"></div>
+            <p class="note" data-i18n="ui.step7Note">5の倍数の10でも値が上がります（どの列も1つのずらし量のままだからです）。分け方が鍵長と合わないと、1つの列に何種類ものずらし量が混ざり、ICは低いままです。</p>
+            <button type="button" id="tryKeyLength" class="btn-secondary" data-i18n="ui.step7Try">応用タブでこのサンプルの鍵長を推定する →</button>
+          </div>
+
+          <!-- ステップ8: クイズ -->
+          <div class="step" data-step="8" hidden>
+            <h3 data-i18n="ui.step8Title">ステップ8: 理解度チェック</h3>
             <div class="quiz-section">
               <fieldset class="quiz-item">
                 <legend class="question" data-i18n="ui.q1">Q1: 次のうち、ICが最も高いのはどれ？</legend>
@@ -207,6 +249,70 @@
                 <button type="button" class="btn-check" data-quiz="2" data-i18n="ui.check">答えを確認</button>
                 <p class="quiz-result" id="result2" aria-live="polite"></p>
               </fieldset>
+              <fieldset class="quiz-item">
+                <legend class="question" data-i18n="ui.q3">Q3: 26文字が均等に出る、長いでたらめな文字列のICはどれに近い？</legend>
+                <div class="quiz-options">
+                  <label><input type="radio" name="q3" value="a"> <span data-i18n="ui.q3a">0</span></label>
+                  <label><input type="radio" name="q3" value="b"> <span data-i18n="ui.q3b">約0.067（英語と同じ）</span></label>
+                  <label><input type="radio" name="q3" value="c"> <span data-i18n="ui.q3c">約0.0385（1/26）</span></label>
+                </div>
+                <button type="button" class="btn-check" data-quiz="3" data-i18n="ui.check">答えを確認</button>
+                <p class="quiz-result" id="result3" aria-live="polite"></p>
+              </fieldset>
+              <fieldset class="quiz-item">
+                <legend class="question" data-i18n="ui.q4">Q4: 英文をシーザー暗号で暗号化すると、ICは平文と比べてどうなる？</legend>
+                <div class="quiz-options">
+                  <label><input type="radio" name="q4" value="a"> <span data-i18n="ui.q4a">変わらない</span></label>
+                  <label><input type="radio" name="q4" value="b"> <span data-i18n="ui.q4b">1/26に近づく</span></label>
+                  <label><input type="radio" name="q4" value="c"> <span data-i18n="ui.q4c">0になる</span></label>
+                </div>
+                <button type="button" class="btn-check" data-quiz="4" data-i18n="ui.check">答えを確認</button>
+                <p class="quiz-result" id="result4" aria-live="polite"></p>
+              </fieldset>
+              <fieldset class="quiz-item">
+                <legend class="question" data-i18n="ui.q5">Q5: 「HELLO」は Σp²＝0.28、IC＝0.10 です。ICのほうが小さいのはなぜ？</legend>
+                <div class="quiz-options">
+                  <label><input type="radio" name="q5" value="a"> <span data-i18n="ui.q5a">ICは同じ位置の文字を2回選ばない（自分自身との一致を数えない）から</span></label>
+                  <label><input type="radio" name="q5" value="b"> <span data-i18n="ui.q5b">ICは大文字だけを数えるから</span></label>
+                  <label><input type="radio" name="q5" value="c"> <span data-i18n="ui.q5c">文字数が奇数だから</span></label>
+                </div>
+                <button type="button" class="btn-check" data-quiz="5" data-i18n="ui.check">答えを確認</button>
+                <p class="quiz-result" id="result5" aria-live="polite"></p>
+              </fieldset>
+              <fieldset class="quiz-item">
+                <legend class="question" data-i18n="ui.q6">Q6: ヴィジュネル暗号の鍵を長くすると、暗号文のICはどうなる？</legend>
+                <div class="quiz-options">
+                  <label><input type="radio" name="q6" value="a"> <span data-i18n="ui.q6a">英語の値（約0.067）に近づく</span></label>
+                  <label><input type="radio" name="q6" value="b"> <span data-i18n="ui.q6b">鍵の長さには関係しない</span></label>
+                  <label><input type="radio" name="q6" value="c"> <span data-i18n="ui.q6c">1/26（約0.0385）に近づく</span></label>
+                </div>
+                <button type="button" class="btn-check" data-quiz="6" data-i18n="ui.check">答えを確認</button>
+                <p class="quiz-result" id="result6" aria-live="polite"></p>
+              </fieldset>
+              <fieldset class="quiz-item">
+                <legend class="question" data-i18n="ui.q7">Q7: 鍵長5のヴィジュネル暗号文を、周期10で列に分けました。列のICの平均はどれに近い？</legend>
+                <div class="quiz-options">
+                  <label><input type="radio" name="q7" value="a"> <span data-i18n="ui.q7a">1/26（10は鍵長と違うから）</span></label>
+                  <label><input type="radio" name="q7" value="b"> <span data-i18n="ui.q7b">言語の値（10は5の倍数で、どの列も1つのずらし量だから）</span></label>
+                  <label><input type="radio" name="q7" value="c"> <span data-i18n="ui.q7c">0（列の文字が少なすぎるから）</span></label>
+                </div>
+                <button type="button" class="btn-check" data-quiz="7" data-i18n="ui.check">答えを確認</button>
+                <p class="quiz-result" id="result7" aria-live="polite"></p>
+              </fieldset>
+              <fieldset class="quiz-item">
+                <legend class="question" data-i18n="ui.q8">Q8: 長い英文の、いろいろな場所から100字ずつ取り出してICを測りました。正しいのはどれ？</legend>
+                <div class="quiz-options">
+                  <label><input type="radio" name="q8" value="a"> <span data-i18n="ui.q8a">どこから取り出しても、ほぼ0.067ちょうどになる</span></label>
+                  <label><input type="radio" name="q8" value="b"> <span data-i18n="ui.q8b">文字数が少ないほど、値のばらつきは小さくなる</span></label>
+                  <label><input type="radio" name="q8" value="c"> <span data-i18n="ui.q8c">取り出す場所で値がばらつき、0.058を下回ることもある</span></label>
+                </div>
+                <button type="button" class="btn-check" data-quiz="8" data-i18n="ui.check">答えを確認</button>
+                <p class="quiz-result" id="result8" aria-live="polite"></p>
+              </fieldset>
+              <div class="quiz-footer">
+                <p class="quiz-score" id="quizScore" aria-live="polite"></p>
+                <button type="button" id="quizReset" class="btn-secondary" data-i18n="ui.quizReset">答えを消してやり直す</button>
+              </div>
             </div>
           </div>
         </div>
@@ -488,7 +594,7 @@
           </section>
 
           <section class="app-section">
-            <h3 data-i18n="ui.compareHeading">🧪 暗号の種類とICの比較（実験）</h3>
+            <h3 data-i18n="ui.cipherCompareHeading">🧪 暗号の種類とICの比較（実験）</h3>
             <p data-i18n="ui.compareIntro">同じ平文を5つの方式で暗号化し、ICと周期ごとのICの鍵長の候補を並べます。単一換字と列転置はICが平文と同じ、ヴィジュネル暗号は鍵長に応じて下がり、自動鍵暗号は周期がないので周期ごとのICでは鍵長が出ません。</p>
             <div class="setup-grid">
               <div class="setup-item">

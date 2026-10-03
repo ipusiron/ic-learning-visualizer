@@ -1992,3 +1992,56 @@ textarea:focus-visible {
   overflow-wrap: anywhere;
   margin: 8px 0;
 }
+
+/* 第3弾 段階3: ステップ5〜7の段落・箇条書き・名前と棒と値の行、クイズの正答数 */
+.step > p:not(.note) {
+  margin-bottom: 12px;
+}
+
+.step-list {
+  margin: 12px 0;
+  padding-left: 1.5em;
+}
+
+.step-list li {
+  margin-bottom: 6px;
+}
+
+/* 名前・棒・値の3列を入れ物の格子にして、全行で棒の枠の幅と値の位置をそろえる（行は display: contents） */
+.ic-rows {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 16px 0;
+  font-size: 0.9rem;
+}
+
+.ic-row {
+  display: contents;
+}
+
+.ic-row-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#tryKeyLength {
+  margin-top: 8px;
+}
+
+.quiz-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.quiz-score {
+  margin: 0;
+  font-weight: 700;
+}
+
+.quiz-score:empty {
+  display: none;
+}
