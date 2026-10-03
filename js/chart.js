@@ -175,7 +175,10 @@ export function drawHistogram(canvas, opts) {
   const counts = new Array(BINS).fill(0);
   for (const v of values) counts[Math.min(BINS - 1, Math.max(0, Math.floor((v / X_MAX) * BINS)))] += 1;
   const top = Math.max(1, ...counts);
-  // 縦軸は回数なので、0〜1 に直して描き、目盛りの代わりに最大の回数を書く
+  // 縦軸は回数なので、0〜1 に直して描き、目盛りの代わりに最大の回数を書く。
+  // いちばん高い棒を高さの7割に留め、上の3割に区分の名前を置く（名前が棒を隠さないように）
+  const TALLEST = 0.7;
+  const h = (c) => (c / top) * TALLEST;
   const f = frame(canvas, 1);
   const x = (v) => M.left + (v / X_MAX) * f.plotW;
   const ticks = [0, 0.03, 0.06, 0.09, 0.12, 0.15].map((v) => ({ x: x(v), label: v.toFixed(2) }));
@@ -187,7 +190,7 @@ export function drawHistogram(canvas, opts) {
   ctx.fillText(labels.x || '', M.left + plotW / 2, HEIGHT - 18);
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  ctx.fillText(String(top), M.left - 6, y(1));
+  ctx.fillText(String(top), M.left - 6, y(TALLEST));
   ctx.fillText('0', M.left - 6, y(0));
   ctx.save();
   ctx.translate(14, M.top + plotH / 2);
@@ -206,7 +209,7 @@ export function drawHistogram(canvas, opts) {
   ctx.fillStyle = cssVar('--bar-current');
   counts.forEach((c, i) => {
     if (!c) return;
-    ctx.fillRect(M.left + i * bw + 0.5, y(c / top), Math.max(1, bw - 1), y(0) - y(c / top));
+    ctx.fillRect(M.left + i * bw + 0.5, y(h(c)), Math.max(1, bw - 1), y(0) - y(h(c)));
   });
   // 区分の境目などの縦の線と、その名前（上端）。名前は棒に重なっても読めるよう、背景色の帯の上に書く
   ctx.font = FONT;

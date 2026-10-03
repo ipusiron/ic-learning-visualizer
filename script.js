@@ -768,7 +768,7 @@ function renderCompare() {
     el('th', { scope: 'row', text: t(`compare.${r.id}`, { L }) }),
     el('td', { text: formatIC(r.ic) }),
     el('td', { text: t(`band.${classifyIC(r.ic, n).band}`) }),
-    el('td', { text: r.period === null ? t('compare.none') : String(r.period) }),
+    el('td', { text: r.period === null ? t('compare.none') : r.period === 1 ? t('compare.single') : String(r.period) }),
     el('td', {}, [el('code', { text: r.text.slice(0, 40) })])
   ])));
 }

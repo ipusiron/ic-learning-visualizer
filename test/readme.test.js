@@ -5,11 +5,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   normalizeText, icDetail, classifyIC, keyLengthCandidates, standardError, formatIC, expectedRate, keyLengthExperiment, encryptVigenere,
-  xorshift32, BANDS, MIN_VERDICT, SHORT_BELOW, KEY_IC_THRESHOLD
+  xorshift32, BANDS, MIN_VERDICT, SHORT_BELOW, KEY_IC_THRESHOLD, kappa, kappaCurve, columnDetails, friedmanEstimate, lengthSpread
 } from '../js/ic-core.js';
 import { SAMPLES, SAMPLE_ORDER, LANGUAGE_IC, VIGENERE_KEY, VIGENERE_PLAIN, RANDOM_LENGTH, ENGLISH } from '../js/samples.js';
 import { MESSAGES } from '../js/messages.js';
 import { MAX_PARAM_TEXT } from '../js/params.js';
+import { substitution, columnar, randomKey, compareCiphers } from '../js/ciphers.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/\r\n/g, '\n');
@@ -33,6 +34,14 @@ const EXP_SEED = 20261003;
 const EXP_KEYS = 40;
 const exp = keyLengthExperiment(plain, Array.from({ length: 20 }, (_, i) => i + 1), xorshift32(EXP_SEED), EXP_KEYS);
 const urlText = normalizeText(encryptVigenere(VIGENERE_PLAIN.split('. ')[0], VIGENERE_KEY)).text;
+// 第3弾: 列の中身・κ・フリードマンの式（サンプルの暗号文）、暗号の種類の比較（種20261004）、ばらつき（種1・1,000回）
+const cols5 = columnDetails(vig, 5).map((c) => formatIC(c.ic));
+const kp = (k) => formatIC(kappa(vig, k).rate);
+const fr = friedmanEstimate(vig);
+const COMPARE_SEED = 20261004;
+const SPREAD_SEED = 1;
+const SPREAD_TRIALS = 1000;
+const corpusText = read('corpus/eval-pg98.txt').replace(/[^A-Z]/g, '');
 
 const DOCS = {
   ja: {
@@ -43,9 +52,10 @@ const DOCS = {
     images: /^assets\/screenshot\d*\.png$/,
     sec: {
       bands: '📊 区分の基準とサンプル', experiment: '🧪 鍵長とICの実験', key: '🔑 鍵長推定の仕組み', monte: '🎲 モンテカルロ実験の仕組み',
-      lang: '📊 言語ごとのIC', url: '🔗 URLで文字列を渡す', tree: '📁 ディレクトリー構造', about: '🛠️ このツールについて'
+      lang: '📊 言語ごとのIC', url: '🔗 URLで文字列を渡す', tree: '📁 ディレクトリー構造', about: '🛠️ このツールについて',
+      spread: '📏 文字数とICのばらつき', compare: '🧪 暗号の種類とICの比較', inside: '🔍 鍵長推定の中身（列・κテスト・フリードマンの式）'
     },
-    heads: { bands: '区分', samples: 'サンプル', experiment: '鍵長', key: '周期', lang: '言語' },
+    heads: { bands: '区分', samples: 'サンプル', experiment: '鍵長', key: '周期', lang: '言語', spread: '文字数', compare: '方式', accuracy: '文字数' },
     range: [(a) => `${a}未満`, (a, b) => `${a}〜${b}`, (a, b) => `${a}〜${b}`, (a) => `${a}以上`],
     claims: [
       `${MIN_VERDICT}字未満は判定せず、${SHORT_BELOW}字未満の短い文`,
@@ -60,7 +70,13 @@ const DOCS = {
       `20,000回で約±${(2 * standardError(engIC, 20000)).toFixed(4)}`,
       `?text=${urlText}&tab=advanced`,
       `最初の1文、${urlText.length}字。開くと鍵長の候補の1位が${keyLengthCandidates(urlText).candidates[0]}になる`,
-      `\`?text=\`は${fmt(MAX_PARAM_TEXT)}字まで`
+      `\`?text=\`は${fmt(MAX_PARAM_TEXT)}字まで`,
+      `種に${EXP_SEED}、鍵の数に${EXP_KEYS}を入れると、この表と同じ値になる`,
+      `列のICは${cols5.join('・')}（平均${formatIC(icOf[5])}）`,
+      `k＝5で${kp(5)}、k＝10で${kp(10)}、k＝3で${kp(3)}`,
+      `サンプル（${fr.N}字、IC ${formatIC(fr.ic)}）では約${fr.estimate.toFixed(2)}で、四捨五入すると${Math.round(fr.estimate)}になり`,
+      `乱数の種${COMPARE_SEED}、ヴィジュネル暗号の鍵長5`,
+      `乱数の種${SPREAD_SEED}・${fmt(SPREAD_TRIALS)}回`
     ]
   },
   en: {
@@ -72,9 +88,11 @@ const DOCS = {
     sec: {
       bands: '📊 Bands and samples', experiment: '🧪 Key length and IC experiment', key: '🔑 How key length estimation works',
       monte: '🎲 How the Monte Carlo experiment works', lang: '📊 IC by language', url: '🔗 Passing text in the URL', tree: '📁 Directory structure',
-      about: '🛠️ About this tool'
+      about: '🛠️ About this tool', spread: '📏 Text length and IC spread', compare: '🧪 Types of cipher and IC',
+      inside: '🔍 Inside key length estimation (columns, kappa test, Friedman formula)'
     },
-    heads: { bands: 'Band', samples: 'Sample', experiment: 'Key length', key: 'Period', lang: 'Language' },
+    heads: { bands: 'Band', samples: 'Sample', experiment: 'Key length', key: 'Period', lang: 'Language', spread: 'Letters', compare: 'Method',
+      accuracy: 'Letters' },
     range: [(a) => `below ${a}`, (a, b) => `${a}-${b}`, (a, b) => `${a}-${b}`, (a) => `${a} or more`],
     claims: [
       `Texts under ${MIN_VERDICT} letters are not classified, and texts under ${SHORT_BELOW} letters`,
@@ -90,7 +108,13 @@ const DOCS = {
       `?text=${urlText}&tab=advanced`,
       `the first sentence of the Vigenère cipher sample, ${urlText.length} letters; the first key length candidate is `
         + `${keyLengthCandidates(urlText).candidates[0]}`,
-      `\`?text=\` takes up to ${fmt(MAX_PARAM_TEXT)} characters`
+      `\`?text=\` takes up to ${fmt(MAX_PARAM_TEXT)} characters`,
+      `With seed ${EXP_SEED} and ${EXP_KEYS} keys, it gives the same values as this table`,
+      `column ICs of ${cols5.slice(0, -1).join(', ')} and ${cols5.at(-1)} (average ${formatIC(icOf[5])})`,
+      `the rate is ${kp(5)} at k = 5, ${kp(10)} at k = 10 and ${kp(3)} at k = 3`,
+      `For the sample (${fr.N} letters, IC ${formatIC(fr.ic)}), it gives about ${fr.estimate.toFixed(2)}, which rounds to ${Math.round(fr.estimate)}`,
+      `random seed ${COMPARE_SEED} and a Vigenère key length of 5`,
+      `With random seed ${SPREAD_SEED} and ${fmt(SPREAD_TRIALS)} windows`
     ]
   }
 };
@@ -201,6 +225,29 @@ for (const [lang, d] of Object.entries(DOCS)) {
     for (const [k, v] of kr) assert.equal(v, formatIC(icOf[Number(k)]), k);
   });
 
+  test(`${d.file}: 文字数とばらつきの表（種1・1,000回）は lengthSpread と一致する`, () => {
+    const rows = table(section(d.text, d.sec.spread), d.heads.spread);
+    assert.equal(rows.length, 6);
+    for (const [n, p5, p50, p95, language, middle] of rows) {
+      const r = lengthSpread(corpusText, Number(n), SPREAD_TRIALS, xorshift32(SPREAD_SEED));
+      const pct = (x) => (Number(n) < MIN_VERDICT ? '—' : `${(x * 100).toFixed(1)}%`);
+      assert.deepEqual([p5, p50, p95, language, middle], [formatIC(r.p5), formatIC(r.p50), formatIC(r.p95), pct(r.shares.language),
+        pct(r.shares.middle)], n);
+    }
+  });
+
+  test(`${d.file}: 暗号の種類とICの比較の表（種20261004・鍵長5）は compareCiphers と一致する`, () => {
+    const rows = table(section(d.text, d.sec.compare), d.heads.compare);
+    const got = compareCiphers(plain, xorshift32(COMPARE_SEED), { vigenereLength: 5 });
+    assert.equal(rows.length, got.length);
+    rows.forEach(([name, ic, band, period], i) => {
+      const r = got[i];
+      const p = r.period === null ? d.msg['compare.none'] : r.period === 1 ? d.msg['compare.single'] : String(r.period);
+      assert.deepEqual([name, ic, band, period], [d.msg[`compare.${r.id}`].replace('{L}', '5'), formatIC(r.ic),
+        d.msg[`band.${classifyIC(r.ic, plain.length).band}`], p], r.id);
+    });
+  });
+
   test(`${d.file}: 言語ごとの IC の表は js/samples.js と一致する`, () => {
     const rows = table(section(d.text, d.sec.lang), d.heads.lang);
     assert.equal(rows.length, LANGUAGE_IC.length);
@@ -236,25 +283,123 @@ for (const [lang, d] of Object.entries(DOCS)) {
   });
 }
 
-test('about_ic.md の計算例（英語のサンプル）と言語ごとの表は実装と一致する', () => {
-  const doc = read('about_ic.md');
-  const d = icDetail(english);
-  assert.ok(doc.includes(`$N=${d.N}$`));
-  assert.ok(doc.includes(`の合計は ${fmt(d.pairs)}`));
-  assert.ok(doc.includes(`$N(N-1) = ${d.N} \\times ${d.N - 1} = ${fmt(d.denom)}$`));
-  assert.ok(doc.includes(`\\frac{${d.pairs}}{${d.denom}} \\approx ${formatIC(d.ic)}`));
-  for (const l of LANGUAGE_IC) {
-    const dc = l.dcode === null ? '—' : formatIC(l.dcode);
-    assert.ok(doc.includes(`| ${MESSAGES.ja[`lang.${l.id}`]} | ${l.friedman.toFixed(2)} → ${formatIC(l.friedman / 26)} | ${dc} |`), l.id);
+for (const [lang, file, sumLabel] of [['ja', 'about_ic.md', 'の合計は'], ['en', 'about_ic.en.md', 'over the letters is']]) {
+  test(`${file} の計算例（英語のサンプル）と言語ごとの表は実装と一致する`, () => {
+    const doc = read(file);
+    const d = icDetail(english);
+    assert.ok(doc.includes(`$N=${d.N}$`));
+    assert.ok(doc.includes(`${sumLabel} ${fmt(d.pairs)}`));
+    assert.ok(doc.includes(`$N(N-1) = ${d.N} \\times ${d.N - 1} = ${fmt(d.denom)}$`));
+    assert.ok(doc.includes(`\\frac{${d.pairs}}{${d.denom}} \\approx ${formatIC(d.ic)}`));
+    for (const l of LANGUAGE_IC) {
+      const dc = l.dcode === null ? '—' : formatIC(l.dcode);
+      assert.ok(doc.includes(`| ${MESSAGES[lang][`lang.${l.id}`]} | ${l.friedman.toFixed(2)} → ${formatIC(l.friedman / 26)} | ${dc} |`), l.id);
+    }
+    assert.doesNotMatch(doc, /231,900|0\.0775/);
+    // 実測で直した主張（T と t を別の文字にする・約2倍・0.038〜0.05）が戻っていない
+    assert.doesNotMatch(doc, /T と t（異なる）|約2倍|0\.038〜0\.05 付近/);
+  });
+}
+
+// about_ic.md・about_ic.en.md に書いた実測の値は、同梱の英文で再現する（手順は impl/ref/day047/about_check2.mjs と同じ）
+test('about_ic の実測の値（並べた2か所の一致・κ・2文字のIC・母音・ヴィジュネル）を同梱の英文で再現し、日英に同じ数が載る', () => {
+  const corpus = read('corpus/eval-pg98.txt').replace(/[^A-Z]/g, '');
+  const docs = [read('about_ic.md'), read('about_ic.en.md')];
+  const has = (v) => docs.every((doc) => doc.includes(v));
+  // 離れた2か所を並べたときの一致する割合
+  const rate = (n) => {
+    let m = 0;
+    for (let i = 0; i < n; i++) if (corpus[i] === corpus[100000 + i]) m++;
+    return m / n;
+  };
+  const rates = [100, 1000, 10000, 50000].map((n) => rate(n).toFixed(n < 10000 ? 3 : 4));
+  assert.deepEqual(rates, ['0.100', '0.070', '0.0648', '0.0660']);
+  for (const v of rates) assert.ok(has(v), v);
+  // 例の2行（英字の大文字だけ）は37文字中4文字が一致
+  const a = 'THEQUICKBROWNFOXJUMPSOVERTHELAZYDOGAN';
+  const b = 'THERAININSPAINSTAYSMAINLYINTHEPLAINWH';
+  assert.equal([...a].filter((ch, i) => ch === b[i]).length, 4);
+  assert.ok(has(a) && has(b) && has('^^^  ^'));
+  // 自分自身を1・2文字ずらして重ねると、英文でも一致する割合が低い
+  const kp = (k) => {
+    const t = corpus.slice(0, 10000);
+    let m = 0;
+    for (let i = 0; i + k < t.length; i++) if (t[i] === t[i + k]) m++;
+    return m / (t.length - k);
+  };
+  const low = [kp(1).toFixed(3), kp(2).toFixed(3)];
+  assert.deepEqual(low, ['0.038', '0.044']);
+  for (const v of low) assert.ok(has(v), v);
+  // 隣り合う2文字の IC の正規化値（×676）: 平文は約5.3、列転置（幅7）は約3.0。母音が2つ続く割合は約5〜6% → 約14〜15%
+  const big = (t) => {
+    const c = new Map();
+    for (let i = 0; i + 1 < t.length; i++) c.set(t.slice(i, i + 2), (c.get(t.slice(i, i + 2)) || 0) + 1);
+    let sum = 0;
+    for (const n of c.values()) sum += n * (n - 1);
+    return (sum / ((t.length - 1) * (t.length - 2))) * 676;
+  };
+  const vv = (t) => {
+    let n = 0;
+    for (let i = 0; i + 1 < t.length; i++) if ('AEIOU'.includes(t[i]) && 'AEIOU'.includes(t[i + 1])) n++;
+    return n / (t.length - 1);
+  };
+  for (const start of [0, 50000, 100000, 150000]) {
+    const p = corpus.slice(start, start + 20000);
+    const rng = xorshift32(20261004 + start);
+    const sub = substitution(p, rng).text;
+    const col = columnar(p, 7, rng).text;
+    assert.ok(big(p) > 4.9 && big(p) < 5.4 && Math.abs(big(sub) - big(p)) < 1e-9, `${start} plain ${big(p)}`);
+    assert.ok(big(col) > 2.8 && big(col) < 3.1, `${start} columnar ${big(col)}`);
+    assert.ok(vv(p) > 0.05 && vv(p) < 0.061 && vv(col) > 0.139 && vv(col) < 0.154, `${start} ${vv(p)} ${vv(col)}`);
   }
-  assert.doesNotMatch(doc, /231,900|0\.0775/);
+  // ヴィジュネル（英文2,000字・鍵40個の平均）: 鍵長2で約0.052、5で約0.044、20で約0.040
+  const mean = (L) => {
+    const rng = xorshift32(7 + L);
+    let sum = 0;
+    for (let i = 0; i < 40; i++) {
+      const start = Math.floor(rng() * (corpus.length - 2000));
+      sum += icDetail(encryptVigenere(corpus.slice(start, start + 2000), randomKey(L, rng))).ic;
+    }
+    return sum / 40;
+  };
+  assert.deepEqual([2, 5, 20].map((L) => mean(L).toFixed(3)), ['0.052', '0.044', '0.040']);
+  for (const v of ['0.052', '0.044', '0.040', '21%', '38%', '98%']) assert.ok(has(v), v);
+});
+
+test('鍵長の当たり率の表（周期ごとのIC・κテスト・フリードマンの式）は、同じ試行で再現する（日英とも）', () => {
+  const kappaFirst = (c) => {
+    const curve = kappaCurve(c);
+    const hit = curve.find((q) => q.rate >= KEY_IC_THRESHOLD);
+    return hit ? hit.k : [...curve].sort((a, b) => b.rate - a.rate)[0].k;
+  };
+  const expected = [100, 200, 400, 1000].map((N) => {
+    const rng = xorshift32(7 + N);
+    const hit = { periodic: 0, kappa: 0, round: 0, within1: 0 };
+    let trials = 0;
+    for (let L = 3; L <= 10; L++) {
+      for (let t = 0; t < 100; t++) {
+        const k = randomKey(L, rng);
+        const start = Math.floor(rng() * (corpusText.length - N));
+        const c = encryptVigenere(corpusText.slice(start, start + N), k);
+        const f = friedmanEstimate(c).estimate;
+        trials++;
+        if (keyLengthCandidates(c).candidates[0] === L) hit.periodic++;
+        if (kappaFirst(c) === L) hit.kappa++;
+        if (Math.round(f) === L) hit.round++;
+        if (Math.abs(f - L) <= 1) hit.within1++;
+      }
+    }
+    const pct = (n) => `${Math.round((n / trials) * 100)}%`;
+    return [String(N), pct(hit.periodic), pct(hit.kappa), pct(hit.round), pct(hit.within1)];
+  });
+  for (const d of Object.values(DOCS)) assert.deepEqual(table(section(d.text, d.sec.inside), d.heads.accuracy), expected, d.file);
 });
 
 test('画像: 参照はすべて実在し、日本語版は assets/、英語版は assets/en/ の画像を使う。参照していない PNG は置かない', () => {
   const refs = {};
   for (const [lang, d] of Object.entries(DOCS)) {
     refs[lang] = [...d.text.matchAll(/!\[[^\]]*\]\((assets\/[^)]+)\)/g)].map((m) => m[1]);
-    assert.equal(refs[lang].length, 5, lang);
+    assert.equal(refs[lang].length, 7, lang);
     for (const r of refs[lang]) {
       assert.ok(fs.existsSync(path.join(ROOT, r)), r);
       assert.match(r, d.images, r);

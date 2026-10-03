@@ -10,7 +10,7 @@ English · [日本語](README.md)
 
 **Day047 - 100 Security Tools with Generative AI**
 
-The index of coincidence (IC) is the probability that two letters picked at random from a text (never the same position twice) are the same letter. It is useful in cryptanalysis, but its definition is hard for beginners to grasp. This educational tool helps you understand IC step by step through the calculation, sample comparison, Monte Carlo experiments, a key length experiment and key length estimation by periodic IC. The estimated key length can be passed to other tools together with the ciphertext. The input is handled only inside your browser and is never sent anywhere.
+The index of coincidence (IC) is the probability that two letters picked at random from a text (never the same position twice) are the same letter. It is useful in cryptanalysis, but its definition is hard for beginners to grasp. This educational tool helps you understand IC step by step through the calculation, sample comparison, Monte Carlo experiments, experiments that vary the text length and the cipher, and key length estimation by periodic IC and the kappa test. A random seed makes the experiments reproducible, and the results can be saved as CSV or JSON. The estimated key length can be passed to other tools together with the ciphertext. The input is handled only inside your browser and is never sent anywhere.
 
 ---
 
@@ -30,7 +30,7 @@ You can try it directly in your browser.
 
 >![Monte Carlo experiment](assets/en/screenshot2.png)
 >
->*Picking two letters from the English sample 20,000 times; the share of matches approaches the expected value (IC). The light band is the expected value ± 2 × standard error*
+>*Picking two letters from the English sample 20,000 times (random seed 20261004); the share of matches approaches the expected value (IC). The light band is the expected value ± 2 × standard error*
 
 >![Key length estimation](assets/en/screenshot3.png)
 >
@@ -38,11 +38,19 @@ You can try it directly in your browser.
 
 >![Key length and IC experiment](assets/en/screenshot4.png)
 >
->*IC of a plaintext encrypted with random keys of length 1 to 20 (solid line) and the approximation (dashed line)*
+>*IC of a plaintext encrypted with random keys of length 1 to 20 (random seed 20261003, 40 keys for each length; solid line) and the approximation (dashed line). The same values as the table under "Key length and IC experiment" below*
 
->![Letter distribution and IC (dark mode)](assets/en/screenshot5.png)
+>![Why splitting by the period brings the IC back (dark mode)](assets/en/screenshot5.png)
 >
->*Step 3 of the step-by-step tab: IC grows as the same letters repeat (dark mode)*
+>*Step 7 of the step-by-step tab: the average column IC when a ciphertext with key length 5 is split with periods 1 to 12. It returns to the value of the language at 5 and 10 (dark mode)*
+
+>![Columns and the kappa test](assets/en/screenshot6.png)
+>
+>*Inside key length estimation: letter counts and IC of the five columns for period 5, the matches when the ciphertext is shifted by 5 and overlapped (24 of 351), and the match rate for each shift*
+
+>![Text length and IC spread](assets/en/screenshot7.png)
+>
+>*Distribution of IC over 1,000 windows of 100 letters from an English text (random seed 1). 5-95% fall between 0.0560 and 0.0764, and 12.5% are "In between"*
 
 ---
 
@@ -64,7 +72,10 @@ In short, "IC Learning Visualizer" means "a tool that visualizes the index of co
 - The calculation: counts of the letters you enter, pairs n(n−1), numerator, denominator and IC
 - Letter distribution and IC: the IC of four 10-letter examples, calculated on the page
 - IC of languages and ciphertexts: random (1/26), English and the Vigenère cipher sample compared as bars
-- A quiz to check your understanding
+- Σp² and IC: the gap between the probability with the same position allowed (Σp²) and IC, for HELLO, ABABAB and the English sample
+- Why a longer key lowers the IC: the approximation derived from the probability that two letters share a shift (about 1/L), with bars for each key length
+- Why splitting by the period brings the IC back: bars of the average column IC of the Vigenère cipher sample for periods 1 to 12, and a button that moves to key length estimation on the Cryptanalysis tab
+- An eight-question quiz to check your understanding (explanations, score, start over)
 
 ### 📊 Sample analysis tab
 
@@ -72,6 +83,7 @@ In short, "IC Learning Visualizer" means "a tool that visualizes the index of co
 - Bar chart of the A-Z counts, number of letters, IC and band (flat, in between, language-like, strongly skewed)
 - When counting only A-Z, full-width letters become half-width and accents are removed (Ü → U, é → E, ß → SS)
 - When not counting only A-Z, the counts and IC are calculated over every character that remains
+- Text length and IC spread (experiment): take N letters (20 to 1,000) from the bundled English text 100 to 5,000 times and show a histogram of IC, the 5-95% range and the share of each band
 
 ### 🎲 Monte Carlo tab
 
@@ -82,13 +94,16 @@ In short, "IC Learning Visualizer" means "a tool that visualizes the index of co
 - With "Allow the same position twice (with replacement)", the experiment converges to Σ(n/N)² instead of IC
 - The two positions picked in the latest trial are shown with the letters around them
 - At the end, the difference between the experiment and the expected value is shown with the typical variation for that number of trials (2 × standard error)
+- With a random seed, the same seed gives the same result. The convergence points can be saved as CSV or JSON
 
 ### 🔐 Cryptanalysis tab
 
 - IC by language (values from two sources side by side)
 - Types of cipher and IC (monoalphabetic, polyalphabetic, transposition)
 - Key length and IC experiment: encrypt a plaintext with random keys of length 1 to 20 and plot the IC of the ciphertext against the approximation
+- Types of cipher and IC (experiment): encrypt the same plaintext with substitution, columnar transposition, the Vigenère cipher (choose the key length) and the autokey cipher, and compare the IC, band and key length candidate
 - Vigenère key length estimation (periodic IC) with its bar chart, and a button that loads the sample ciphertext
+- Inside key length estimation: look inside the columns (click a bar to see the letter counts and IC of each column for that period), shift and overlap (kappa test; matching positions are highlighted, with bars of the match rate for each shift) and the Friedman formula (the values substituted, compared with the first candidate)
 - Links that open the estimated key length and the ciphertext in Day030, Day046, Day017 and Day009
 - Links to related tools (Day009, Day028, Day030, Day044, Day046)
 
@@ -98,6 +113,7 @@ In short, "IC Learning Visualizer" means "a tool that visualizes the index of co
 - Light and dark modes (following the OS setting, with a button to switch)
 - Tabs that work with the keyboard (left and right arrows, Home, End); Esc closes the help
 - No horizontal overflow even on a 320 px wide smartphone
+- Random seeds for the experiments, and saving results as CSV or JSON (see "Random seeds and saving results")
 
 ---
 
@@ -107,7 +123,8 @@ In short, "IC Learning Visualizer" means "a tool that visualizes the index of co
 2. On the "Step by step" tab, go through the definition and calculation of IC
 3. On the "Sample analysis" tab, compare the IC and band of the samples. You can analyze your own text as well
 4. On the "Monte Carlo" tab, watch the experiment approach the expected value
-5. On the "Cryptanalysis" tab, experiment with key length and IC and estimate the key length from a Vigenère ciphertext. The estimated key length can be passed to other tools through the links
+5. On the "Cryptanalysis" tab, experiment with key length and IC and with types of cipher, and estimate the key length from a Vigenère ciphertext. The estimated key length can be passed to other tools through the links
+6. To make every screen in a class or an article the same, enter the same number in the "Random seed" field of the experiments. The results can be saved as CSV or JSON
 
 The buttons at the top right switch between Japanese and English and between light and dark. To run it locally, run `python -m http.server 8000` or similar in the folder and open `http://localhost:8000/`.
 
@@ -135,7 +152,7 @@ $$IC = \frac{\sum_i n_i (n_i - 1)}{N (N - 1)}$$
 - Monoalphabetic substitution (the Caesar cipher and others) and transposition keep the set of letter counts of the plaintext, so their IC is the same as the plaintext
 - Polyalphabetic substitution (the Vigenère cipher and others) approaches 1/26 as the key gets longer
 
-The mathematical details are in [about_ic.md](about_ic.md) (in Japanese).
+The mathematical details are in [about_ic.en.md](about_ic.en.md) (Japanese version: [about_ic.md](about_ic.md)).
 
 ---
 
@@ -168,6 +185,26 @@ The values of the samples (counting only A-Z) are as follows.
 
 ---
 
+## 📏 Text length and IC spread
+
+The experiment on the Sample analysis tab shows why the band of a short text is often wrong. It takes N letters at random positions from the bundled English text again and again, calculates IC each time, and shows the distribution and the share of each band. With random seed 1 and 1,000 windows, the results are as follows.
+
+| Letters | 5% | Median | 95% | Language-like | In between |
+|---|---|---|---|---|---|
+| 20 | 0.0368 | 0.0579 | 0.0947 | — | — |
+| 50 | 0.0498 | 0.0629 | 0.0800 | 72.1% | 25.8% |
+| 100 | 0.0560 | 0.0646 | 0.0764 | 87.5% | 12.5% |
+| 200 | 0.0593 | 0.0653 | 0.0737 | 97.3% | 2.7% |
+| 500 | 0.0619 | 0.0659 | 0.0710 | 100.0% | 0.0% |
+| 1000 | 0.0624 | 0.0660 | 0.0698 | 100.0% | 0.0% |
+
+- 20 letters is under 50, so no band is given (the 5-95% range is as wide as 0.037 to 0.095)
+- With 50 letters, a quarter fall into "In between". This is why texts under 50 letters are not classified and texts under 200 letters get a note that the band can be wrong
+- The English text is 200,000 letters taken from Charles Dickens, A Tale of Two Cities (Project Gutenberg #98, public domain in the United States), letters only. The source and SHA-256 are in `corpus/NOTICE.md`
+- The windows come from a single novel, so other texts and languages spread differently
+
+---
+
 ## 🧪 Key length and IC experiment
 
 The Vigenère cipher encrypts each letter with a different shift depending on the key letter, so the longer the key, the flatter the letter counts of the ciphertext and the closer IC gets to 1/26. If the key letters vary, the IC of the ciphertext is close to the following approximation (κp is the IC of the plaintext, κr is 1/26 and L is the key length).
@@ -186,7 +223,25 @@ On the Cryptanalysis tab, a plaintext is encrypted with random keys of length 1 
 | 20 | 0.0402 | 0.0400 |
 
 - Key length 1 is a monoalphabetic cipher (a single shift), so the value is that of the plaintext
-- The experiment on the page uses new random keys each time, so the values change slightly from run to run
+- With the seed left blank, the experiment uses new random keys each time, so the values change slightly from run to run. With seed 20261003 and 40 keys, it gives the same values as this table
+
+---
+
+## 🧪 Types of cipher and IC
+
+The experiment on the Cryptanalysis tab encrypts the same plaintext with five methods and compares the IC, band and key length candidate from periodic IC. With the plaintext of the Vigenère cipher sample (356 letters), random seed 20261004 and a Vigenère key length of 5, the results are as follows.
+
+| Method | IC | Band | Key length candidate |
+|---|---|---|---|
+| Plaintext | 0.0737 | Language-like | 1 (high without splitting) |
+| Substitution (random alphabet) | 0.0737 | Language-like | 1 (high without splitting) |
+| Columnar transposition (width 7) | 0.0737 | Language-like | 1 (high without splitting) |
+| Vigenère cipher (key length 5) | 0.0419 | Flat | 5 |
+| Autokey cipher (5-letter primer) | 0.0400 | Flat | none |
+
+- Substitution and columnar transposition keep the set of letter counts of the plaintext, so their IC is exactly that of the plaintext. IC alone cannot tell these two from the plaintext
+- When the whole text has an IC of 0.058 or more, it already has the value of a language without splitting, so the key length candidate is 1
+- The autokey cipher continues its key with the plaintext itself, so it has no period, and periodic IC cannot find a key length
 
 ---
 
@@ -212,13 +267,48 @@ For the Vigenère cipher sample (key LEMON), the results are as follows.
 
 ---
 
+## 🔍 Inside key length estimation (columns, kappa test, Friedman formula)
+
+Below the key length results, three methods show why the estimation works.
+
+- Look inside the columns: choose a period, or click a bar of IC by period, to see the letter counts and IC of each column for that period. Split with period 5, the sample gives column ICs of 0.0587, 0.0861, 0.0579, 0.0773 and 0.0728 (average 0.0706). Each column has only 71 or 72 letters, so the columns vary
+- Shift and overlap (kappa test): overlap the ciphertext with itself shifted by k letters and count how often the same letter meets. If k is a multiple of the key length, the two letters were encrypted with the same shift, so they match about as often as in the plaintext. For the sample, the rate is 0.0684 at k = 5, 0.0809 at k = 10 and 0.0340 at k = 3
+- Friedman formula: a rough key length from the IC of the whole ciphertext alone (κp is 0.0667 for English, κr is 1/26 and N is the number of letters)
+
+$$L \approx \frac{(\kappa_p - \kappa_r)\,N}{(N - 1)\,IC - \kappa_r N + \kappa_p}$$
+
+For the sample (356 letters, IC 0.0432), it gives about 5.93, which rounds to 6, not the key length 5. During development, N letters taken from the bundled English text were encrypted with random keys of length 3 to 10 (100 each), and the three methods were compared by how often the correct key length came first.
+
+| Letters | Periodic IC | Kappa test | Friedman formula (rounded) | Friedman formula (within ±1) |
+|---|---|---|---|---|
+| 100 | 64% | 23% | 9% | 18% |
+| 200 | 87% | 34% | 14% | 25% |
+| 400 | 98% | 56% | 18% | 35% |
+| 1000 | 98% | 76% | 21% | 38% |
+
+- Periodic IC is the first candidate of the tool. The kappa test takes the smallest shift whose match rate is 0.058 or more
+- The kappa test and the Friedman formula are shown for learning the ideas Friedman used; the key length candidates come from periodic IC
+
+---
+
 ## 🎲 How the Monte Carlo experiment works
 
 - Each trial picks two positions uniformly so that they are never the same (as in the definition of IC). The expected share of matches equals IC
 - With "Allow the same position twice (with replacement)", picking the same position twice (always a match) is counted too, so the expected value becomes Σ(n/N)². For the English sample, IC is 0.0651 and Σ(n/N)² is 0.0671
 - The typical variation of the share after n trials is 2 × the standard error √(p × (1 − p) / n), where p is the expected value. For the English sample (IC 0.0651), it is about ±0.016 after 1,000 trials and about ±0.0035 after 20,000 trials. The band on the convergence chart is this range, and the experiment stays inside it about 95% of the time
-- Random numbers come from Math.random (this is a learning experiment, not a cryptographic use)
+- Random numbers come from Math.random when the seed is blank, and from xorshift32 when a seed is given (this is a learning experiment, not a cryptographic use)
 - The calculations run on the main thread in small chunks. On this machine with Node.js 22, IC of 100,000 letters took about 0.4 ms, the column IC up to period 20 about 8 ms, and 100,000 trials about 3 ms
+
+---
+
+## 💾 Random seeds and saving results
+
+- The Monte Carlo experiment, text length and IC spread, the key length and IC experiment, and types of cipher and IC have a random seed field. Enter an integer from 0 to 4294967295 and the same seed gives the same result. Leave it blank for new random numbers each time
+- When an experiment finishes, the status line shows the seed it used ("seed 20261003" and so on). Use it to make every screen in a class the same or to reproduce the figures in an article
+- The results can be saved as CSV or JSON (the Monte Carlo convergence points, the spread values, the key length and IC experiment, the cipher comparison, and IC by period with the kappa test and Friedman formula)
+- The file name is `ic-learning-visualizer_<kind>_YYYYMMDD-HHMM.csv` (`.json` for JSON)
+- CSV files are UTF-8 (with BOM) with CRLF line endings, and every cell is enclosed in `"`. They open as they are in spreadsheet software
+- The files are only created and saved inside the browser and are never sent anywhere
 
 ---
 
@@ -242,14 +332,15 @@ The values depend on the texts counted, so they differ a little from source to s
 
 ## 🎯 Use cases
 
-- Cryptography classes: put the plaintext, Caesar cipher and Vigenère cipher samples side by side and show with numbers that IC does not change under monoalphabetic substitution and approaches 1/26 under polyalphabetic substitution. The key length experiment shows on a graph that IC falls as the key gets longer and matches the approximation well
-- Probability and statistics classes: check "the probability that two picked letters match" with the Monte Carlo experiment, and experience that the experiment approaches the expected value as the trials increase (the law of large numbers) and that the band (standard error) narrows. You can also compare the expected values with and without replacement
-- Classical crypto problems in CTFs: use IC to judge whether a ciphertext is monoalphabetic or polyalphabetic, and estimate the key length by periodic IC. Once you have a candidate, follow the links to split the text into columns in [Modular Text Divider (Day030)](https://ipusiron.github.io/modular-text-divider/) or search for a key that is an English word in [AlphaLoom (Day046)](https://ipusiron.github.io/alphaloom/)
+- Cryptography classes: put the plaintext, Caesar cipher and Vigenère cipher samples side by side and show with numbers that IC does not change under monoalphabetic substitution and approaches 1/26 under polyalphabetic substitution. The key length experiment shows on a graph that IC falls as the key gets longer and matches the approximation well. The cipher comparison shows that substitution and columnar transposition keep exactly the IC of the plaintext, so IC alone cannot tell them apart
+- Probability and statistics classes: check "the probability that two picked letters match" with the Monte Carlo experiment, and experience that the experiment approaches the expected value as the trials increase (the law of large numbers) and that the band (standard error) narrows. You can also compare the expected values with and without replacement. The text length and IC spread experiment shows on a histogram that the smaller the sample, the wider the spread of the estimate
+- Classical crypto problems in CTFs: use IC to judge whether a ciphertext is monoalphabetic or polyalphabetic, estimate the key length by periodic IC, and check how each column is skewed by looking inside the columns. Some ciphers, such as the autokey cipher, show no period. Once you have a candidate, follow the links to split the text into columns in [Modular Text Divider (Day030)](https://ipusiron.github.io/modular-text-divider/) or search for a key that is an English word in [AlphaLoom (Day046)](https://ipusiron.github.io/alphaloom/)
 - Making puzzles and cipher games: check the IC of a ciphertext you made to see whether it could be broken by frequency analysis (whether it looks like language). The experiment also shows how far IC falls when you change the key length
 - Comparing languages: confirm with the German and French samples or your own texts that IC differs between languages (including how much short texts vary)
 - Measuring how skewed letters are: compare how skewed the letters of a text are (how many repeated letters) with a single number. Artificial text with many repetitions has a large IC
 - English classes and learners abroad: switch the screen to English and run the same experiments with English explanations
-- Self-study: go through the definition and calculation on the step-by-step tab and check your understanding with the quiz
+- Self-study: go through the definition and calculation, why a longer key lowers the IC and why splitting by the period brings it back on the step-by-step tab, and check your understanding with the eight-question quiz
+- Figures for articles and teaching material: fix a random seed to reproduce the same figure, or save the results as CSV and make other graphs in spreadsheet software
 
 ---
 
@@ -261,6 +352,8 @@ The values depend on the texts counted, so they differ a little from source to s
 - Every letter and result is put on the screen with `textContent` (never interpreted as HTML)
 - Input up to 100,000 characters, and `?text=` in the URL up to 10,000 characters
 - Only the theme and language choices are saved in localStorage (the tool works where storage is unavailable)
+- Saving results only creates a file inside the browser and downloads it (nothing is sent)
+- The English text for the spread experiment (`corpus/eval-pg98.txt`) is loaded from the same site
 
 ---
 
@@ -272,13 +365,17 @@ The values depend on the texts counted, so they differ a little from source to s
 - Key length estimation covers periods where every column has at least 3 letters (up to 20) and ciphertexts of at least 20 letters. Longer keys and shorter ciphertexts make it miss more often
 - The approximation in the key length experiment is a guide for keys whose letters vary. With keys of repeated letters (such as AAA), the IC of the ciphertext does not fall
 - The IC values by language come from sources and depend on the texts counted
+- The kappa test and the Friedman formula are shown for learning. Key length candidates come from periodic IC (the kappa test is right 34% of the time at 200 letters, and the Friedman formula only 21% even at 1,000 letters when rounded)
+- For ciphers without a period, such as the autokey cipher, periodic IC cannot find a key length either
+- The text length and IC spread experiment takes windows from a single English text. Other texts and languages spread differently
+- The random seed is for reproducing learning experiments (xorshift32) and must not be used to generate cryptographic keys
 - If the page is opened directly as a file (file://), the tool does not start in Chrome or Edge (they cannot load ES modules from files). A notice appears on the screen; open it over HTTP as described under "Usage" above
 
 ---
 
 ## 🧪 Tests
 
-The logic (`js/ic-core.js`, `js/samples.js`, `js/links.js`, `js/params.js`) is kept in modules that do not depend on the DOM and is tested with the standard Node.js test runner (`node:test`). There are no dependencies.
+The logic (`js/ic-core.js`, `js/ciphers.js`, `js/export.js`, `js/samples.js`, `js/links.js`, `js/params.js`) is kept in modules that do not depend on the DOM and is tested with the standard Node.js test runner (`node:test`). There are no dependencies.
 
 ```bash
 npm test
@@ -290,6 +387,8 @@ npm test
 - Also checks that the key length experiment matches the approximation within 0.004, the links to other tools and the URL parameters, and that the Japanese and English dictionaries have the same keys with no Japanese in English
 - Checks the properties of the samples (the Vigenère cipher sample is not undone by a single shift, the random sample has an IC near 1/26) and the tables and numbers in the Japanese and English READMEs
 - Also checks the CSP, labels and tab roles in index.html, and color contrast (at least 4.5:1 in both light and dark modes)
+- Checks the kappa test, columns, Friedman formula, text length spread (SHA-256 of the bundled English text), the cipher comparison (a known autokey answer: ATTACKATDAWN with the primer QUEENLY gives QNXEPVYTWTWP), random seeds, CSV and JSON
+- Also reproduces the values in steps 5 to 7, the reasons for the eight quiz answers, and the measured values written in about_ic and the READMEs (spread, cipher types, key length accuracy)
 
 ---
 
@@ -306,27 +405,31 @@ ic-learning-visualizer/
 │   │   ├── screenshot2.png # Monte Carlo experiment
 │   │   ├── screenshot3.png # Key length estimation
 │   │   ├── screenshot4.png # Key length and IC experiment
-│   │   └── screenshot5.png # Step by step, dark
+│   │   ├── screenshot5.png # Step 7 of step by step, dark
+│   │   ├── screenshot6.png # Columns and the kappa test
+│   │   └── screenshot7.png # Text length and IC spread
 │   ├── favicon.svg         # Favicon
 │   ├── screenshot.png      # Screenshot for the Japanese README (sample analysis)
 │   ├── screenshot2.png     # Screenshot for the Japanese README (Monte Carlo)
 │   ├── screenshot3.png     # Screenshot for the Japanese README (key length estimation)
 │   ├── screenshot4.png     # Screenshot for the Japanese README (key length and IC)
-│   └── screenshot5.png     # Screenshot for the Japanese README (step by step, dark)
+│   ├── screenshot5.png     # Screenshot for the Japanese README (step 7, dark)
+│   ├── screenshot6.png     # Screenshot for the Japanese README (columns and kappa test)
+│   └── screenshot7.png     # Screenshot for the Japanese README (text length and IC spread)
 ├── corpus/                 # English text for the spread experiment
 │   ├── NOTICE.md           # Source and SHA-256 of the English text
 │   └── eval-pg98.txt       # Letters-only excerpt of A Tale of Two Cities (#98)
 ├── js/                     # Modules other than the screen
-│   ├── chart.js            # Charts (convergence, IC by period, key length and IC)
+│   ├── chart.js            # Charts (convergence, IC by period, kappa, key length and IC, spread)
 │   ├── ciphers.js          # Classical ciphers for the cipher comparison (substitution, columnar, autokey)
 │   ├── export.js           # Exporting results (CSV, JSON)
 │   ├── file-check.js       # Notice when the tool cannot start from file://
 │   ├── i18n.js             # Choosing and switching the language (Japanese, English)
-│   ├── ic-core.js          # IC logic (normalization, IC, periodic IC, key length, bands, Monte Carlo, key length experiment)
+│   ├── ic-core.js          # IC logic (normalization, periodic IC, key length, bands, Monte Carlo, experiments, kappa, columns, Friedman, seeds)
 │   ├── links.js            # Links that pass the ciphertext to other tools
 │   ├── messages.js         # Strings shown on the screen (Japanese, English)
 │   ├── params.js           # Reads ?text= and ?tab= from the URL
-│   ├── samples.js          # Samples, step examples and the language IC table
+│   ├── samples.js          # Samples, step examples, quiz answers and the language IC table
 │   ├── tabs.js             # Tab switching (including the keyboard)
 │   ├── theme-init.js       # Applies the theme at the start of loading
 │   └── theme.js            # Light/dark switching
@@ -351,6 +454,7 @@ ic-learning-visualizer/
 ├── LICENSE                 # License (MIT)
 ├── README.en.md            # This document
 ├── README.md               # Japanese document
+├── about_ic.en.md          # Mathematical details of IC (English)
 ├── about_ic.md             # Mathematical details of IC (Japanese)
 ├── index.html              # Screen
 ├── package.json            # npm test settings (no dependencies)

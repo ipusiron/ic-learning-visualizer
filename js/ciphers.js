@@ -1,7 +1,7 @@
 // 暗号の種類と IC の比較に使う古典暗号（DOM 非依存）。入力も出力も A〜Z の文字列
 // 単一換字・列転置は文字の出現回数の組み合わせを変えない（IC は平文と同じ）。ヴィジュネル・自動鍵は出現回数を平らにする
 
-import { ALPHABET, encryptVigenere, indexOfCoincidence, keyLengthCandidates } from './ic-core.js';
+import { ALPHABET, encryptVigenere, indexOfCoincidence, keyLengthCandidates, KEY_IC_THRESHOLD } from './ic-core.js';
 
 export function randomKey(length, rng) {
   let key = '';
@@ -66,6 +66,8 @@ export function compareCiphers(plain, rng, { vigenereLength = 5, columnarWidth =
   return COMPARE_IDS.map((id) => {
     const r = make[id]();
     const k = keyLengthCandidates(r.text);
-    return { id, text: r.text, ic: indexOfCoincidence(r.text), period: k.periodFound ? k.candidates[0] : null };
+    // 分けなくても全体の IC が高い（平文・単一換字・転置）なら 1。周期が見つからなければ null
+    const period = k.whole >= KEY_IC_THRESHOLD ? 1 : k.periodFound ? k.candidates[0] : null;
+    return { id, text: r.text, ic: indexOfCoincidence(r.text), period };
   });
 }

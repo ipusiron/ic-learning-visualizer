@@ -36,6 +36,8 @@ test('比べる5方式: 平文・単一換字・列転置は IC が同じ、ヴ�
   assert.equal(rows.find((r) => r.id === 'vigenere').period, 5);
   assert.ok(ic.autokey < 0.045, String(ic.autokey));
   assert.equal(rows.find((r) => r.id === 'autokey').period, null);
+  // 平文・単一換字・列転置は、分けなくても全体の IC が0.058以上なので 1（周期2を候補にしない）
+  for (const id of ['plain', 'substitution', 'columnar']) assert.equal(rows.find((r) => r.id === id).period, 1, id);
   // 同じ種なら同じ結果（授業で画面をそろえられる）
   assert.deepEqual(compareCiphers(plain, xorshift32(20261004)).map((r) => r.text), rows.map((r) => r.text));
   assert.equal(rows.find((r) => r.id === 'vigenere').text.length, encryptVigenere(plain, 'AAAAA').length);
