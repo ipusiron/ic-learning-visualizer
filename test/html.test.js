@@ -5,7 +5,7 @@ import { KEY_IC_THRESHOLD } from '../js/ic-core.js';
 
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const read = (f) => fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
-const SCRIPTS = ['script.js', 'js/chart.js', 'js/tabs.js', 'js/theme.js', 'js/theme-init.js', 'js/file-check.js'];
+const SCRIPTS = ['script.js', 'js/chart.js', 'js/tabs.js', 'js/theme.js', 'js/theme-init.js', 'js/file-check.js', 'js/links.js', 'js/params.js'];
 
 test('CSP: インラインのスクリプト・スタイルを許さず、外部への送信先を持たない', () => {
   const m = html.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/);
@@ -28,7 +28,8 @@ test('インラインのイベントハンドラー・style 属性・インラ�
     assert.match(m[1], /src="/);
     assert.equal(m[2].trim(), '');
   }
-  for (const id of ['fileNotice', 'panel-analyze', 'panel-monte', 'panel-advanced', 'customTextSection', 'keyLengthResult', 'chartOther']) {
+  for (const id of ['fileNotice', 'panel-analyze', 'panel-monte', 'panel-advanced', 'customTextSection', 'keyLengthResult', 'chartOther',
+    'experimentResult']) {
     assert.match(html, new RegExp(`id="${id}"[^>]*hidden`), id);
   }
   // JS は CSSOM の width・height（棒の長さ・canvas の高さ）だけを使う。style 属性・cssText・innerHTML・alert は使わない
@@ -61,7 +62,9 @@ test('画面の要素の id がそろっている（それぞれ1つだけ）', 
     'monteStop', 'monteReset', 'monteStatus', 'pickWindow1', 'pickWindow2', 'pos1', 'pos2', 'char1', 'char2', 'matchBadge', 'trialCount',
     'matchCount', 'experimentalIC', 'theoreticalIC', 'convergenceCanvas', 'monteProgressBar', 'monteProgress', 'languageTable', 'thresholdText',
     'vigenereText', 'estimateKeyLength', 'loadVigenereSample', 'keyLengthStatus', 'keyLengthResult', 'keyLengthTable', 'keyLengthVerdict',
-    'keyLengthWhole', 'helpDialog', 'helpTitle', 'helpClose'];
+    'keyLengthWhole', 'helpDialog', 'helpTitle', 'helpClose', 'monteReplacement', 'theoryLabel', 'experimentSource', 'experimentTrials',
+    'runExperiment', 'experimentStatus', 'experimentResult', 'experimentCanvas', 'experimentSummary', 'experimentTable', 'periodicCanvas',
+    'keyLengthLinks'];
   for (const id of ids) assert.equal(html.split(`id="${id}"`).length - 1, 1, id);
 });
 
@@ -84,7 +87,7 @@ test('ボタンには type、入力欄にはラベル、外部リンクには no
   }
   for (const m of html.matchAll(/<input type="(checkbox|radio)"[^>]*>/g)) assert.ok(html.includes(`<label>${m[0]}`), m[0]);
   for (const m of html.matchAll(/<a\b[^>]*href="https?:[^"]*"[^>]*>/g)) assert.match(m[0], /rel="noopener noreferrer"/, m[0]);
-  for (const id of ['simpleStatus', 'analyzeStatus', 'monteStatus', 'keyLengthStatus', 'typeInference', 'result1', 'result2']) {
+  for (const id of ['simpleStatus', 'analyzeStatus', 'monteStatus', 'keyLengthStatus', 'experimentStatus', 'typeInference', 'result1', 'result2']) {
     assert.match(html, new RegExp(`id="${id}"[^>]*aria-live="polite"`), id);
   }
   assert.match(html, /<dialog id="helpDialog" class="modal" aria-labelledby="helpTitle">/);
@@ -92,6 +95,8 @@ test('ボタンには type、入力欄にはラベル、外部リンクには no
     assert.match(html, new RegExp(`data-help-topic="${m[1]}"`), m[1]);
   }
   assert.match(html, /role="progressbar"[^>]*aria-valuemin="0" aria-valuemax="100"/);
+  // JS が作るリンク（ほかのツールへ）も新しいタブで、参照元を渡さない
+  assert.match(read('script.js'), /target: '_blank', rel: 'noopener noreferrer'/);
 });
 
 test('画面のしきい値の初期表示はロジックの値と同じ', () => {

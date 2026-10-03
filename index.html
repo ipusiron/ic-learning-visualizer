@@ -332,6 +332,10 @@
               </select>
             </div>
           </div>
+          <div class="input-options">
+            <label><input type="checkbox" id="monteReplacement"> 同じ位置も選ぶ（復元抽出）</label>
+            <p class="note">選ぶと、同じ位置の2文字（かならず一致する）も数えるので、収束する先は IC ではなく Σ(n/N)² になり、IC より少し大きくなります。</p>
+          </div>
           <div class="custom-text-section" id="customTextSection" hidden>
             <label for="monteCustomText" class="field-label">自分の文（A〜Zだけを使う）</label>
             <textarea id="monteCustomText" rows="4" spellcheck="false" placeholder="例: HELLO WORLD"></textarea>
@@ -344,7 +348,7 @@
           <div class="text-preview" id="textPreview"></div>
           <div class="text-stats">
             <span class="stat-item"><span class="stat-label">文字数</span> <span class="stat-value" id="previewLength">0</span></span>
-            <span class="stat-item"><span class="stat-label">理論値（IC）</span> <span class="stat-value" id="previewIC">0.0000</span></span>
+            <span class="stat-item"><span class="stat-label">IC</span> <span class="stat-value" id="previewIC">0.0000</span></span>
           </div>
         </div>
 
@@ -375,11 +379,12 @@
               <div class="stat-card"><span class="stat-label">試行回数</span><span class="stat-value" id="trialCount">0</span></div>
               <div class="stat-card"><span class="stat-label">一致回数</span><span class="stat-value" id="matchCount">0</span></div>
               <div class="stat-card"><span class="stat-label">実験の値</span><span class="stat-value large" id="experimentalIC">0.0000</span></div>
-              <div class="stat-card"><span class="stat-label">理論値（IC）</span><span class="stat-value" id="theoreticalIC">0.0000</span></div>
+              <div class="stat-card"><span class="stat-label" id="theoryLabel">理論値（IC）</span><span class="stat-value" id="theoreticalIC">0.0000</span></div>
             </div>
             <div class="convergence-chart">
               <h4>収束グラフ</h4>
               <canvas id="convergenceCanvas" role="img" aria-label="試行回数と実験の値の収束グラフ"></canvas>
+              <p class="note">薄い帯は、理論値 ± 2×標準誤差（その回数でのばらつきの目安）。回数が増えるほど細くなり、実験の値はおよそ95%の確率で帯の中に入ります。</p>
             </div>
             <div class="progress-bar" role="progressbar" aria-label="進み具合" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="monteProgressBar">
               <div class="progress-fill" id="monteProgress"></div>
@@ -434,8 +439,42 @@
           </section>
 
           <section class="app-section">
+            <h3>🧪 鍵長とICの関係（実験）</h3>
+            <p>平文を、鍵長1〜20のランダムな鍵でヴィジュネル暗号にして、暗号文のICがどう下がるかを見ます。鍵の文字がばらばらなら、暗号文のICは近似式 (κp + (L−1)/26) ÷ L に近づきます（κpは平文のIC、Lは鍵長）。</p>
+            <div class="setup-grid">
+              <div class="setup-item">
+                <label for="experimentSource">平文</label>
+                <select id="experimentSource">
+                  <option value="vigenerePlain">ヴィジュネル暗号のサンプルの平文</option>
+                  <option value="english">英語のサンプル</option>
+                  <option value="current">サンプル分析タブのテキスト</option>
+                </select>
+              </div>
+              <div class="setup-item">
+                <label for="experimentTrials">鍵長ごとの鍵の数（1〜50）</label>
+                <input type="number" id="experimentTrials" value="10" min="1" max="50" inputmode="numeric">
+              </div>
+            </div>
+            <button type="button" id="runExperiment" class="btn-primary">実験する</button>
+            <p id="experimentStatus" class="status" aria-live="polite"></p>
+            <div id="experimentResult" hidden>
+              <canvas id="experimentCanvas" role="img" aria-label="鍵長と暗号文のICのグラフ"></canvas>
+              <p id="experimentSummary" class="verdict"></p>
+              <details class="data-details">
+                <summary>数値の表を見る</summary>
+                <div class="table-wrap">
+                  <table class="data-table" id="experimentTable">
+                    <thead><tr><th scope="col">鍵長</th><th scope="col">実験（平均）</th><th scope="col">近似式</th></tr></thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </details>
+            </div>
+          </section>
+
+          <section class="app-section">
             <h3>🔑 ヴィジュネル暗号の鍵長推定（周期ごとのIC）</h3>
-            <p>暗号文を周期Lで列に分け（1, L+1, 2L+1, …文字目が列1）、列ごとのICを平均します。周期が鍵長（またはその倍数）なら、各列は同じずらしのシーザー暗号なので、ICが言語の値に戻ります。平均が<span id="thresholdText">0.058</span>以上の周期を小さい順に並べ、残りを平均の大きい順に続けます。</p>
+            <p>暗号文を周期Lで列に分け（1, L+1, 2L+1, …文字目が列1）、列ごとのICを平均します。周期が鍵長（またはその倍数）なら、各列は同じずらしのシーザー暗号なので、ICが言語の値に戻ります。平均が<span id="thresholdText">0.058</span>以上の周期を小さい順に並べ、残りを平均の大きい順に続けます。調べる周期は、各列が3文字以上になる範囲（最大20）です。</p>
             <div class="key-length-estimator">
               <label for="vigenereText" class="field-label">ヴィジュネル暗号の暗号文（英字20字以上）</label>
               <textarea id="vigenereText" rows="4" spellcheck="false" placeholder="暗号文を入れる"></textarea>
@@ -455,6 +494,11 @@
                 </div>
                 <p id="keyLengthVerdict" class="verdict"></p>
                 <p id="keyLengthWhole" class="note"></p>
+                <h4>周期ごとのIC</h4>
+                <canvas id="periodicCanvas" role="img" aria-label="周期ごとの列の平均ICの棒グラフ"></canvas>
+                <p class="note">左端の灰色の棒は周期1（分けない全体）。緑の棒がしきい値以上の周期で、鍵長の倍数でも高くなります。</p>
+                <h4>ほかのツールで続ける</h4>
+                <ul class="tool-links" id="keyLengthLinks"></ul>
               </div>
             </div>
           </section>
