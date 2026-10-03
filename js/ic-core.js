@@ -211,3 +211,30 @@ export function encryptVigenere(text, key) {
 export function formatIC(x) {
   return Number.isFinite(x) ? x.toFixed(4) : '0.0000';
 }
+
+// 多表式暗号（鍵長 L、鍵の文字がばらばら）の IC の近似: (κp + (L−1)κr) / L。κp は平文の IC、κr は 1/26
+export function approxPolyIC(kp, L, kr = RANDOM_IC) {
+  return (kp + (L - 1) * kr) / L;
+}
+
+// 鍵長とICの実験: A〜Z の平文を、鍵長 L ごとに trials 個のランダムな鍵で暗号化し、暗号文の IC の平均を近似式と並べる
+// { kp, rows: [{ L, measured, approx }] }
+export function keyLengthExperiment(plain, lengths, rng, trials = 10) {
+  const kp = indexOfCoincidence(plain);
+  const rows = lengths.map((L) => {
+    let sum = 0;
+    for (let t = 0; t < trials; t++) {
+      let key = '';
+      for (let i = 0; i < L; i++) key += ALPHABET[Math.floor(rng() * 26)];
+      sum += indexOfCoincidence(encryptVigenere(plain, key));
+    }
+    return { L, measured: sum / trials, approx: approxPolyIC(kp, L) };
+  });
+  return { kp, rows };
+}
+
+// 割合 p を n 回の試行で求めたときの、ばらつきの目安の帯（p ± k×標準誤差、0〜1 に収める）
+export function sigmaBand(p, n, k = 2) {
+  const d = k * standardError(p, n);
+  return [Math.max(0, p - d), Math.min(1, p + d)];
+}

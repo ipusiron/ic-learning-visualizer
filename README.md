@@ -299,8 +299,10 @@ ic-learning-visualizer/
 ├── js/                     # 画面以外のモジュール
 │   ├── chart.js            # 収束グラフの描画（canvas）
 │   ├── file-check.js       # file://で起動できなかったときの案内
-│   ├── ic-core.js          # ICの計算（正規化・IC・周期ごとのIC・鍵長の候補・区分・モンテカルロ）
+│   ├── ic-core.js          # ICの計算（正規化・IC・周期ごとのIC・鍵長の候補・区分・モンテカルロ・鍵長とICの実験）
+│   ├── links.js            # 暗号文を渡してほかのツールで続けるリンク
 │   ├── messages.js         # 画面に出す文言
+│   ├── params.js           # URLの?text=・?tab=を受け取る
 │   ├── samples.js          # サンプル・ステップの例・言語ごとのICの表
 │   ├── tabs.js             # タブの切り替え（キーボード操作を含む）
 │   ├── theme-init.js       # 読み込みの最初にテーマを当てる
@@ -308,8 +310,10 @@ ic-learning-visualizer/
 ├── test/                   # テスト（node:test）
 │   ├── contrast.test.js    # 配色のコントラスト・入力欄と操作の大きさ
 │   ├── core.test.js        # ICの計算・正規化・鍵長・区分・モンテカルロ・既知解答
+│   ├── experiment.test.js  # 鍵長とICの実験・近似式・ばらつきの帯
 │   ├── format.test.js      # 行の長さ・制御文字・行数の下限
 │   ├── html.test.js        # CSP・要素のid・タブの役割・ラベル
+│   ├── links.test.js       # ほかのツールへのリンク・URLの受け取り
 │   ├── messages.test.js    # 文言の置き場所とキー
 │   ├── readme.test.js      # READMEの表・構成・ツリー・画像
 │   └── samples.test.js     # サンプルの性質・ステップの例・クイズの正解
