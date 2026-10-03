@@ -4,18 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**IC Learning Visualizer** - 一致指数をビジュアル理解するツール. A static web app that teaches the Index of Coincidence (IC) step by step: the calculation, sample comparison, Monte Carlo experiments, and Vigenère key length estimation by periodic IC. Input never leaves the browser.
+**IC Learning Visualizer** - 一致指数をビジュアル理解するツール. A static web app that teaches the Index of Coincidence (IC) step by step: the calculation, sample comparison, Monte Carlo experiments (with a ±2σ band and an option to sample with replacement), a key length vs IC experiment, and Vigenère key length estimation by periodic IC with links that pass the ciphertext to other tools. Input never leaves the browser. Japanese and English UI.
 
 Part of the "100 Security Tools with Generative AI" project (Day047).
 
 ## Architecture
 
-- **index.html**: Four ARIA tabs (step learning, sample analysis, Monte Carlo, applications). Meta CSP without `'unsafe-inline'`; hidden parts use the `hidden` attribute (no style attributes). Help is a `<dialog>` with static topics
-- **script.js**: UI entry (ES module). Builds tables, bars and windows with `textContent` only; no `innerHTML`, `alert` or `confirm`. Bar lengths and the canvas height are set through CSSOM (`.style.width` / `.style.height` only)
-- **js/ic-core.js**: Pure logic (no DOM): `normalizeText` (NFKC→NFD, marks removed, ß→SS, A–Z only by default), `icDetail`/`indexOfCoincidence` (counts every character that remains), `breakdownRows`, `periodicIC`, `keyLengthCandidates` (threshold 0.058), `classifyIC` (bands 0.046 / 0.058 / 0.10, no verdict under 50 letters, short note under 200), `pickPair`/`runTrials` (without replacement by default), `expectedRate`, `standardError`, `historyStep`, `chartMax`, `shiftLetters`, `encryptVigenere`, `xorshift32`
+- **index.html**: Four ARIA tabs (step learning, sample analysis, Monte Carlo, applications). Meta CSP without `'unsafe-inline'`; hidden parts use the `hidden` attribute (no style attributes). Help is a `<dialog>` with static topics. Static text carries `data-i18n` / `data-i18n-attr`
+- **script.js**: UI entry (ES module). Builds tables, bars and windows with `textContent` only; no `innerHTML`, `alert` or `confirm`. Bar lengths and the canvas height are set through CSSOM (`.style.width` / `.style.height` only). Results are kept in `state` and redrawn from it, and status lines are stored as key + values (`say`), so switching the language redraws everything without losing input or results
+- **js/ic-core.js**: Pure logic (no DOM): `normalizeText` (NFKC→NFD, marks removed, ß→SS, A–Z only by default), `icDetail`/`indexOfCoincidence` (counts every character that remains), `breakdownRows`, `periodicIC`, `keyLengthCandidates` (threshold 0.058), `classifyIC` (bands 0.046 / 0.058 / 0.10, no verdict under 50 letters, short note under 200), `pickPair`/`runTrials` (without replacement by default), `expectedRate` (IC, or Σp² with replacement), `standardError`, `sigmaBand`, `historyStep`, `chartMax`, `shiftLetters`, `encryptVigenere`, `approxPolyIC`, `keyLengthExperiment`, `xorshift32`. Key length candidates only use periods where every column has at least 3 letters (`MIN_COLUMN_LETTERS`)
 - **js/samples.js**: Sample texts. The Caesar and Vigenère samples are generated from their plaintexts (shift 3, key LEMON) and the random sample from a fixed seed, so they are never copied by hand. Also the step-3 patterns, the quiz options and the language IC table (Friedman & Callimahos normalized values, dCode values)
-- **js/chart.js**: Convergence chart on canvas (devicePixelRatio aware, colors from CSS variables `--chart-*`)
-- **js/messages.js**: Strings that JS builds (Japanese). Logic returns keys and values only
+- **js/chart.js**: Canvas charts (devicePixelRatio aware, colors from CSS variables `--chart-*`): convergence with the ±2σ band, IC by period, key length experiment
+- **js/links.js**: Links that pass the ciphertext to Day030 / Day046 (`?text=…&n=…`, 10,000 letters) and Day017 / Day009 (`?text=`, Day009 up to 5,000). If the text cannot be passed, the link opens the page only
+- **js/params.js**: `?text=` (up to 10,000 characters; fills sample analysis and key length estimation) and `?tab=`
+- **js/messages.js / i18n.js**: All UI strings in Japanese and English (same keys; `ui.*` are the static HTML strings). Language: `?lang=` → saved choice (`ic-learning-visualizer-lang`) → browser language. Logic returns keys and values only
 - **js/tabs.js / theme.js / theme-init.js / file-check.js**: Tabs with arrow keys, light/dark theme (`ic-learning-visualizer-theme`), notice when opened via `file://`
 - **style.css**: Color tokens on `:root`, dark overrides for `data-theme="dark"` and `prefers-color-scheme` (both blocks must stay identical)
 - **about_ic.md**: Mathematical background (Japanese). Its numbers are checked by `test/readme.test.js`
@@ -29,9 +31,12 @@ There is no Web Worker: every calculation is fast enough on the main thread (100
 
 ## Testing
 
-- `test/core.test.js`: known IC answers, normalization, periodic IC, key length candidates, bands, sampling without/with replacement, convergence within 4 standard errors, Vigenère known answer (ATTACKATDAWN / LEMON → LXFOPVEFRNHR)
+- `test/core.test.js`: known IC answers, normalization, periodic IC, key length candidates (including the 3-letter column rule), bands, sampling without/with replacement, convergence within 4 standard errors, Vigenère known answer (ATTACKATDAWN / LEMON → LXFOPVEFRNHR)
+- `test/experiment.test.js`: approximation, key length experiment within 0.004 of the approximation, ±2σ band
+- `test/links.test.js`: links to other tools and URL parameters
 - `test/samples.test.js`: sample properties (Vigenère sample is not a single shift, random sample IC near 1/26), step-3 order, quiz answer, language table
-- `test/readme.test.js`: README YAML structure, section order, tables and numbers, directory tree, images; about_ic.md numbers
+- `test/readme.test.js`: README.md / README.en.md (same headings) YAML structure, section order, tables and numbers (the experiment table uses seed 20261003 and 40 keys), directory tree, images (`assets/` for Japanese, `assets/en/` for English); about_ic.md numbers
+- `test/i18n.test.js`: same keys and placeholders in both languages, no Japanese in English (except the language button), every Japanese text in index.html has a key, initial language
 - `test/html.test.js`, `test/contrast.test.js`, `test/messages.test.js`, `test/format.test.js`: CSP and markup, color contrast and control sizes, strings kept in messages.js, minified-file detection
 
 ## Key Implementation Notes

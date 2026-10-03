@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   normalizeText, countChars, letterCounts, icDetail, indexOfCoincidence, breakdownRows, columnsOf, periodicIC, keyLengthCandidates,
   classifyIC, xorshift32, pickPair, runTrials, expectedRate, standardError, historyStep, chartMax, shiftLetters, encryptVigenere,
-  formatIC, KEY_IC_THRESHOLD, BANDS, MIN_VERDICT, SHORT_BELOW, RANDOM_IC
+  formatIC, KEY_IC_THRESHOLD, BANDS, MIN_VERDICT, SHORT_BELOW, RANDOM_IC, MIN_COLUMN_LETTERS
 } from '../js/ic-core.js';
 
 const near = (a, b, eps = 1e-12) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -73,6 +73,14 @@ test('鍵長の候補: しきい値以上の最小の周期が先、倍数はそ
   assert.ok(!r.candidates.includes(1));
   assert.ok(r.curve.find((p) => p.k === 5).ic >= KEY_IC_THRESHOLD);
   assert.ok(r.whole < KEY_IC_THRESHOLD);
+});
+
+test('鍵長の候補は、各列が3文字以上になる周期から選ぶ（短い平文で偽の候補を出さない）', () => {
+  const plain = 'THEQUICKBROWNFOXJUMPSOVERTHELAZYDOG';
+  const r = keyLengthCandidates(plain);
+  assert.equal(Math.max(...r.curve.map((p) => p.k)), Math.floor(plain.length / MIN_COLUMN_LETTERS));
+  assert.ok(!r.periodFound, r.candidates.slice(0, 3).join(','));
+  assert.equal(Math.max(...keyLengthCandidates('A'.repeat(300)).curve.map((p) => p.k)), 20);
 });
 
 test('IC の区分（50字未満は判定しない、200字未満は短い印）', () => {

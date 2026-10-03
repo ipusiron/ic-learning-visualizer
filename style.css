@@ -1802,3 +1802,86 @@ textarea:focus-visible {
     padding: 8px 10px;
   }
 }
+
+/* 周期ごとのIC・鍵長とICの実験のグラフ、ほかのツールへのリンク */
+#periodicCanvas,
+#experimentCanvas {
+  display: block;
+  width: 100%;
+  height: 220px;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.result-box h4 {
+  margin-top: 16px;
+}
+
+.tool-links {
+  margin-top: 8px;
+  padding-left: 1.4em;
+}
+
+.tool-links li {
+  margin-bottom: 8px;
+}
+
+.tool-links a {
+  color: var(--accent-text);
+}
+
+.link-note {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.data-details summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--accent-text);
+}
+
+#runExperiment {
+  margin-top: 4px;
+}
+
+/* canvas の中身の高さを描画の高さ（220px）とそろえる（枠線の分だけ縮まないように） */
+#convergenceCanvas,
+#periodicCanvas,
+#experimentCanvas {
+  box-sizing: content-box;
+  width: calc(100% - 2px);
+}
+
+/* 言語の切り替えボタン（テーマのボタンと同じ高さ44px） */
+.lang-btn {
+  padding: 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (min-width: 769px) {
+  /* 左右の列はボタン2つぶん（言語・テーマ）を確保し、タイトルを画面の中央に置く */
+  .header-inner {
+    grid-template-columns: minmax(120px, 1fr) minmax(0, 720px) minmax(120px, 1fr);
+  }
+}
+
+/* グリッドの子が中身（長い選択肢・表）の最小幅に引っぱられて、狭い幅で横にはみ出さないように */
+.application-sections > *,
+.setup-grid > *,
+.results-grid > *,
+.analysis-area > *,
+.monte-visualization > * {
+  min-width: 0;
+}
+
+.setup-item select {
+  max-width: 100%;
+}

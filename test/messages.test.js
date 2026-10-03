@@ -5,7 +5,7 @@ import { MESSAGES, t } from '../js/messages.js';
 import { SAMPLE_ORDER, STEP3_PATTERNS, LANGUAGE_IC } from '../js/samples.js';
 
 const read = (f) => fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
-const LOGIC = ['script.js', 'js/ic-core.js', 'js/samples.js', 'js/chart.js', 'js/tabs.js', 'js/theme.js'];
+const LOGIC = ['script.js', 'js/ic-core.js', 'js/samples.js', 'js/chart.js', 'js/tabs.js', 'js/theme.js', 'js/links.js', 'js/params.js', 'js/i18n.js'];
 // かな・カタカナ・漢字（記号の定数はエスケープ表記で書くので、ここに当たるのは文言だけ）
 const JAPANESE = new RegExp('[\\u3040-\\u30ff\\u3400-\\u9fff]');
 const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1');

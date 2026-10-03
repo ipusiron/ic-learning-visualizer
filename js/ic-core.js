@@ -5,6 +5,8 @@ export const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 export const MAX_TEXT = 100000;
 export const RANDOM_IC = 1 / 26;
 export const MAX_PERIOD = 20;
+// 鍵長の候補は、各列が3文字以上になる周期（文字数÷3まで）から選ぶ。列が2文字だと IC が偶然大きくなりやすい（ref/day047/keylen_cap.json）
+export const MIN_COLUMN_LETTERS = 3;
 // 列の平均ICがこの値以上の周期を、鍵長の候補として先に並べる（Day044・046 と同じ）
 export const KEY_IC_THRESHOLD = 0.058;
 // 判定の区分（ref/day047/classify.json の実測で決めた）: 平坦＜0.046≦中間＜0.058≦言語らしい＜0.10≦偏り
@@ -108,8 +110,9 @@ export function periodicIC(text, max = MAX_PERIOD) {
 
 // 鍵長の候補（周期2以上）: 平均がしきい値以上の周期を小さい順に先に、続いて残りを平均の大きい順に。
 // 平均の大きい順だけで並べると、列が短く値の揺れる鍵長の倍数が1位に来やすい（ref/day047/keylen.json）
+// 調べる周期は max まで、かつ各列が MIN_COLUMN_LETTERS 文字以上になる範囲
 export function keyLengthCandidates(text, max = MAX_PERIOD) {
-  const all = periodicIC(text, max);
+  const all = periodicIC(text, Math.min(max, Math.floor([...text].length / MIN_COLUMN_LETTERS)));
   const curve = all.filter((p) => p.k >= 2);
   const hits = curve.filter((p) => p.ic >= KEY_IC_THRESHOLD).map((p) => p.k);
   const rest = [...curve].sort((a, b) => b.ic - a.ic || a.k - b.k).map((p) => p.k).filter((k) => !hits.includes(k));
@@ -210,4 +213,31 @@ export function encryptVigenere(text, key) {
 
 export function formatIC(x) {
   return Number.isFinite(x) ? x.toFixed(4) : '0.0000';
+}
+
+// 多表式暗号（鍵長 L、鍵の文字がばらばら）の IC の近似: (κp + (L−1)κr) / L。κp は平文の IC、κr は 1/26
+export function approxPolyIC(kp, L, kr = RANDOM_IC) {
+  return (kp + (L - 1) * kr) / L;
+}
+
+// 鍵長とICの実験: A〜Z の平文を、鍵長 L ごとに trials 個のランダムな鍵で暗号化し、暗号文の IC の平均を近似式と並べる
+// { kp, rows: [{ L, measured, approx }] }
+export function keyLengthExperiment(plain, lengths, rng, trials = 10) {
+  const kp = indexOfCoincidence(plain);
+  const rows = lengths.map((L) => {
+    let sum = 0;
+    for (let t = 0; t < trials; t++) {
+      let key = '';
+      for (let i = 0; i < L; i++) key += ALPHABET[Math.floor(rng() * 26)];
+      sum += indexOfCoincidence(encryptVigenere(plain, key));
+    }
+    return { L, measured: sum / trials, approx: approxPolyIC(kp, L) };
+  });
+  return { kp, rows };
+}
+
+// 割合 p を n 回の試行で求めたときの、ばらつきの目安の帯（p ± k×標準誤差、0〜1 に収める）
+export function sigmaBand(p, n, k = 2) {
+  const d = k * standardError(p, n);
+  return [Math.max(0, p - d), Math.min(1, p + d)];
 }
