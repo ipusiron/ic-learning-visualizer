@@ -134,11 +134,13 @@ export function drawConvergence(canvas, opts) {
   }
 }
 
-// 周期ごとのIC の棒グラフ。opts: { curve: [{ k, ic }]（周期1を含む）, threshold, labels: { x, y, threshold } }
-// しきい値以上の周期（2以上）は色を変える。周期1は「分けない全体」なので別の色
+// 周期ごとのIC（κテストの一致率にも使う）の棒グラフ。
+// opts: { curve: [{ k, ic }], threshold, selected, wholeFirst, lines: [{ value, label }], labels: { x, y, threshold } }
+// しきい値以上は色を変える。wholeFirst なら周期1（分けない全体）を別の色に。selected の棒は枠で囲む
+// 戻り値は、canvas の横の位置から周期を求める関数（棒を押して選ぶため）
 export function drawPeriodic(canvas, opts) {
-  const { curve = [], threshold = 0, labels = {} } = opts;
-  const yMax = chartMax([threshold, ...curve.map((p) => p.ic)]);
+  const { curve = [], threshold = 0, selected = null, wholeFirst = true, lines = [], labels = {} } = opts;
+  const yMax = chartMax([threshold, ...curve.map((p) => p.ic), ...lines.map((l) => l.value)]);
   const f = frame(canvas, yMax);
   const maxK = Math.max(1, ...curve.map((p) => p.k));
   const slot = f.plotW / maxK;
@@ -148,11 +150,89 @@ export function drawPeriodic(canvas, opts) {
   const { ctx, y } = f;
   const bw = Math.max(3, slot * 0.6);
   for (const p of curve) {
-    ctx.fillStyle = cssVar(p.k === 1 ? '--bar-random' : p.ic >= threshold ? '--bar-english' : '--bar-current');
+    ctx.fillStyle = cssVar(wholeFirst && p.k === 1 ? '--bar-random' : p.ic >= threshold ? '--bar-english' : '--bar-current');
     ctx.fillRect(cx(p.k) - bw / 2, y(p.ic), bw, y(0) - y(p.ic));
+    if (p.k === selected) {
+      ctx.strokeStyle = cssVar('--chart-text');
+      ctx.lineWidth = 2;
+      ctx.strokeRect(cx(p.k) - bw / 2 - 3, M.top, bw + 6, y(0) - M.top);
+    }
   }
+  for (const l of lines) hLine(f, l.value, cssVar('--chart-axis'), l.label, [2, 4], true);
   // 名前は左端に（右端の棒は鍵長の倍数で高くなりやすく、重なるため）
-  hLine(f, threshold, cssVar('--chart-theory'), labels.threshold || '', [6, 5], true);
+  if (threshold > 0) hLine(f, threshold, cssVar('--chart-theory'), labels.threshold || '', [6, 5], true);
+  return (clientX) => {
+    const k = Math.ceil((clientX - M.left) / slot);
+    return k >= 1 && k <= maxK ? k : null;
+  };
+}
+
+// IC の分布のヒストグラム。opts: { values, marks: [{ value, label }], labels: { x, y } }。横軸は 0〜0.15（それより大きい値は右端の棒に入れる）
+export function drawHistogram(canvas, opts) {
+  const { values = [], marks = [], labels = {} } = opts;
+  const X_MAX = 0.15;
+  const BINS = 60;
+  const counts = new Array(BINS).fill(0);
+  for (const v of values) counts[Math.min(BINS - 1, Math.max(0, Math.floor((v / X_MAX) * BINS)))] += 1;
+  const top = Math.max(1, ...counts);
+  // 縦軸は回数なので、0〜1 に直して描き、目盛りの代わりに最大の回数を書く。
+  // いちばん高い棒を高さの7割に留め、上の3割に区分の名前を置く（名前が棒を隠さないように）
+  const TALLEST = 0.7;
+  const h = (c) => (c / top) * TALLEST;
+  const f = frame(canvas, 1);
+  const x = (v) => M.left + (v / X_MAX) * f.plotW;
+  const ticks = [0, 0.03, 0.06, 0.09, 0.12, 0.15].map((v) => ({ x: x(v), label: v.toFixed(2) }));
+  const { ctx, y, plotW, plotH } = f;
+  ctx.fillStyle = cssVar('--chart-text');
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (const t of ticks) ctx.fillText(t.label, t.x, M.top + plotH + 6);
+  ctx.fillText(labels.x || '', M.left + plotW / 2, HEIGHT - 18);
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(String(top), M.left - 6, y(TALLEST));
+  ctx.fillText('0', M.left - 6, y(0));
+  ctx.save();
+  ctx.translate(14, M.top + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center';
+  ctx.fillText(labels.y || '', 0, 0);
+  ctx.restore();
+  ctx.strokeStyle = cssVar('--chart-axis');
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(M.left + 0.5, M.top);
+  ctx.lineTo(M.left + 0.5, M.top + plotH + 0.5);
+  ctx.lineTo(M.left + plotW, M.top + plotH + 0.5);
+  ctx.stroke();
+  const bw = plotW / BINS;
+  ctx.fillStyle = cssVar('--bar-current');
+  counts.forEach((c, i) => {
+    if (!c) return;
+    ctx.fillRect(M.left + i * bw + 0.5, y(h(c)), Math.max(1, bw - 1), y(0) - y(h(c)));
+  });
+  // 区分の境目などの縦の線と、その名前（上端）。名前は棒に重なっても読めるよう、背景色の帯の上に書く
+  ctx.font = FONT;
+  for (const m of marks) {
+    ctx.strokeStyle = cssVar('--chart-theory');
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(x(m.value), M.top);
+    ctx.lineTo(x(m.value), M.top + plotH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  marks.forEach((m, i) => {
+    const lx = x(m.value) + 3;
+    const ly = M.top + 2 + (i % 3) * 16;
+    const w = ctx.measureText(m.label).width;
+    ctx.fillStyle = cssVar('--surface');
+    ctx.fillRect(lx - 2, ly - 1, w + 4, 15);
+    ctx.fillStyle = cssVar('--chart-theory');
+    ctx.fillText(m.label, lx, ly);
+  });
 }
 
 // 鍵長とICの実験のグラフ。opts: { rows: [{ L, measured, approx }], labels: { x, y, measured, approx, random } }

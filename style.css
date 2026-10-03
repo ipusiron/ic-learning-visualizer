@@ -1885,3 +1885,163 @@ textarea:focus-visible {
 .setup-item select {
   max-width: 100%;
 }
+
+/* 第3弾: 列の中身・κテスト・フリードマンの式・ばらつき・書き出し */
+#spreadCanvas,
+#kappaCanvas {
+  display: block;
+  box-sizing: content-box;
+  width: calc(100% - 2px);
+  height: 220px;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+#periodicCanvas,
+#kappaCanvas {
+  cursor: pointer;
+}
+
+.export-row {
+  margin-top: 12px;
+}
+
+.column-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 8px 0 16px;
+}
+
+.column-card {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.column-card.hit {
+  border-color: var(--bar-english);
+}
+
+.column-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+.column-bars {
+  height: 48px;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.column-letters {
+  margin-top: 6px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.kappa-rows {
+  margin: 8px 0;
+  padding: 8px;
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.kappa-row {
+  display: flex;
+  font-family: monospace;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.kappa-char {
+  display: inline-block;
+  width: 1.1em;
+  text-align: center;
+  flex: none;
+}
+
+.kappa-char.pad {
+  color: var(--text-muted);
+}
+
+.kappa-char.hit {
+  background: var(--picked-bg);
+  color: var(--picked-text);
+  font-weight: 700;
+  border-radius: 3px;
+}
+
+.formula-line {
+  font-family: monospace;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+  margin: 8px 0;
+}
+
+/* 第3弾 段階3: ステップ5〜7の段落・箇条書き・名前と棒と値の行、クイズの正答数 */
+.step > p:not(.note) {
+  margin-bottom: 12px;
+}
+
+.step-list {
+  margin: 12px 0;
+  padding-left: 1.5em;
+}
+
+.step-list li {
+  margin-bottom: 6px;
+}
+
+/* 名前・棒・値の3列を入れ物の格子にして、全行で棒の枠の幅と値の位置をそろえる（行は display: contents） */
+.ic-rows {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 16px 0;
+  font-size: 0.9rem;
+}
+
+.ic-row {
+  display: contents;
+}
+
+.ic-row-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#tryKeyLength {
+  margin-top: 8px;
+}
+
+.quiz-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.quiz-score {
+  margin: 0;
+  font-weight: 700;
+}
+
+.quiz-score:empty {
+  display: none;
+}
