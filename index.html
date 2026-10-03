@@ -294,6 +294,48 @@
           </div>
         </div>
       </div>
+
+      <div class="card">
+        <h2 data-i18n="ui.spreadHeading">📏 文字数とICのばらつき（実験）</h2>
+        <p data-i18n="ui.spreadIntro">英文からN字を何度も取り出してICを計算し、文字数によってICがどれだけばらつくかを見ます。短い文の区分が外れやすい理由を確かめられます。英文は A Tale of Two Cities（Project Gutenberg #98）の英字だけの抜粋（20万字）です。</p>
+        <div class="setup-grid">
+          <div class="setup-item">
+            <label for="spreadLength" data-i18n="ui.spreadLength">文字数（N）</label>
+            <select id="spreadLength">
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100" selected>100</option>
+              <option value="200">200</option>
+              <option value="500">500</option>
+              <option value="1000">1000</option>
+            </select>
+          </div>
+          <div class="setup-item">
+            <label for="spreadTrials" data-i18n="ui.spreadTrials">取り出す回数（100〜5,000）</label>
+            <input type="number" id="spreadTrials" value="1000" min="100" max="5000" step="100" inputmode="numeric">
+          </div>
+          <div class="setup-item">
+                <label for="spreadSeed" data-i18n="ui.seedLabel">乱数の種（空欄なら毎回ちがう）</label>
+                <input type="text" id="spreadSeed" inputmode="numeric" autocomplete="off" spellcheck="false">
+              </div>
+        </div>
+        <button type="button" id="runSpread" class="btn-primary" data-i18n="ui.runExperiment">実験する</button>
+        <p id="spreadStatus" class="status" aria-live="polite"></p>
+        <div id="spreadResult" hidden>
+          <canvas id="spreadCanvas" role="img" aria-label="ICの分布のヒストグラム" data-i18n-attr="aria-label:ui.spreadLabel"></canvas>
+          <p id="spreadSummary" class="verdict"></p>
+          <div class="table-wrap">
+            <table class="data-table" id="spreadTable">
+              <thead><tr><th scope="col" data-i18n="ui.metricBand">区分</th><th scope="col" data-i18n="ui.colShare">割合</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="inline-actions export-row">
+              <button type="button" id="exportSpreadCsv" class="btn-secondary" data-i18n="ui.saveCsv">CSVで保存</button>
+              <button type="button" id="exportSpreadJson" class="btn-secondary" data-i18n="ui.saveJson">JSONで保存</button>
+            </div>
+        </div>
+      </div>
     </section>
 
     <!-- タブ3: モンテカルロ実験 -->
@@ -330,6 +372,10 @@
                 <option value="fast" data-i18n="ui.speedFast">速い（すぐに結果）</option>
               </select>
             </div>
+            <div class="setup-item">
+                <label for="monteSeed" data-i18n="ui.seedLabel">乱数の種（空欄なら毎回ちがう）</label>
+                <input type="text" id="monteSeed" inputmode="numeric" autocomplete="off" spellcheck="false">
+              </div>
           </div>
           <div class="input-options">
             <label><input type="checkbox" id="monteReplacement"> <span data-i18n="ui.replacement">同じ位置も選ぶ（復元抽出）</span></label>
@@ -388,6 +434,10 @@
             <div class="progress-bar" role="progressbar" aria-label="進み具合" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="monteProgressBar" data-i18n-attr="aria-label:ui.progressLabel">
               <div class="progress-fill" id="monteProgress"></div>
             </div>
+            <div class="inline-actions export-row">
+              <button type="button" id="exportMonteCsv" class="btn-secondary" data-i18n="ui.saveCsv">CSVで保存</button>
+              <button type="button" id="exportMonteJson" class="btn-secondary" data-i18n="ui.saveJson">JSONで保存</button>
+            </div>
           </div>
         </div>
       </div>
@@ -438,6 +488,48 @@
           </section>
 
           <section class="app-section">
+            <h3 data-i18n="ui.compareHeading">🧪 暗号の種類とICの比較（実験）</h3>
+            <p data-i18n="ui.compareIntro">同じ平文を5つの方式で暗号化し、ICと周期ごとのICの鍵長の候補を並べます。単一換字と列転置はICが平文と同じ、ヴィジュネル暗号は鍵長に応じて下がり、自動鍵暗号は周期がないので周期ごとのICでは鍵長が出ません。</p>
+            <div class="setup-grid">
+              <div class="setup-item">
+                <label for="compareSource" data-i18n="ui.plainLabel">平文</label>
+                <select id="compareSource">
+                  <option value="vigenerePlain" data-i18n="ui.srcVigenerePlain">ヴィジュネル暗号のサンプルの平文</option>
+                  <option value="english" data-i18n="ui.srcEnglish">英語のサンプル</option>
+                  <option value="current" data-i18n="ui.srcCurrent">サンプル分析タブのテキスト</option>
+                </select>
+              </div>
+              <div class="setup-item">
+                <label for="compareKeyLength" data-i18n="ui.vigLengthLabel">ヴィジュネル暗号の鍵長（1〜20）</label>
+                <input type="number" id="compareKeyLength" value="5" min="1" max="20" inputmode="numeric">
+              </div>
+              <div class="setup-item">
+                <label for="compareSeed" data-i18n="ui.seedLabel">乱数の種（空欄なら毎回ちがう）</label>
+                <input type="text" id="compareSeed" inputmode="numeric" autocomplete="off" spellcheck="false">
+              </div>
+            </div>
+            <button type="button" id="runCompare" class="btn-primary" data-i18n="ui.runCompare">暗号化して比べる</button>
+            <p id="compareStatus" class="status" aria-live="polite"></p>
+            <div id="compareResult" hidden>
+              <div class="table-wrap">
+                <table class="data-table" id="compareTable">
+                  <thead>
+                    <tr>
+                      <th scope="col" data-i18n="ui.colMethod">方式</th><th scope="col">IC</th><th scope="col" data-i18n="ui.metricBand">区分</th>
+                      <th scope="col" data-i18n="ui.colKeyCandidate">周期ごとのICの鍵長の候補</th><th scope="col" data-i18n="ui.colCipherStart">暗号文（先頭40字）</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div class="inline-actions export-row">
+              <button type="button" id="exportCompareCsv" class="btn-secondary" data-i18n="ui.saveCsv">CSVで保存</button>
+              <button type="button" id="exportCompareJson" class="btn-secondary" data-i18n="ui.saveJson">JSONで保存</button>
+            </div>
+            </div>
+          </section>
+
+          <section class="app-section">
             <h3 data-i18n="ui.experimentHeading">🧪 鍵長とICの関係（実験）</h3>
             <p data-i18n="ui.experimentIntro">平文を、鍵長1〜20のランダムな鍵でヴィジュネル暗号にして、暗号文のICがどう下がるかを見ます。鍵の文字がばらばらなら、暗号文のICは近似式 (κp + (L−1)/26) ÷ L に近づきます（κpは平文のIC、Lは鍵長）。</p>
             <div class="setup-grid">
@@ -452,6 +544,10 @@
               <div class="setup-item">
                 <label for="experimentTrials" data-i18n="ui.keysLabel">鍵長ごとの鍵の数（1〜50）</label>
                 <input type="number" id="experimentTrials" value="10" min="1" max="50" inputmode="numeric">
+              </div>
+              <div class="setup-item">
+                <label for="experimentSeed" data-i18n="ui.seedLabel">乱数の種（空欄なら毎回ちがう）</label>
+                <input type="text" id="experimentSeed" inputmode="numeric" autocomplete="off" spellcheck="false">
               </div>
             </div>
             <button type="button" id="runExperiment" class="btn-primary" data-i18n="ui.runExperiment">実験する</button>
@@ -468,6 +564,10 @@
                   </table>
                 </div>
               </details>
+              <div class="inline-actions export-row">
+              <button type="button" id="exportExperimentCsv" class="btn-secondary" data-i18n="ui.saveCsv">CSVで保存</button>
+              <button type="button" id="exportExperimentJson" class="btn-secondary" data-i18n="ui.saveJson">JSONで保存</button>
+            </div>
             </div>
           </section>
 
@@ -496,6 +596,31 @@
                 <h4 data-i18n="ui.periodicHeading">周期ごとのIC</h4>
                 <canvas id="periodicCanvas" role="img" aria-label="周期ごとの列の平均ICの棒グラフ" data-i18n-attr="aria-label:ui.periodicLabel"></canvas>
                 <p class="note" data-i18n="ui.periodicNote">左端の灰色の棒は周期1（分けない全体）。緑の棒がしきい値以上の周期で、鍵長の倍数でも高くなります。</p>
+                <div class="inline-actions export-row">
+                  <button type="button" id="exportPeriodicCsv" class="btn-secondary" data-i18n="ui.saveCsv">CSVで保存</button>
+                  <button type="button" id="exportPeriodicJson" class="btn-secondary" data-i18n="ui.saveJson">JSONで保存</button>
+                </div>
+                <h4 data-i18n="ui.columnsHeading">列の中身を見る</h4>
+                <p class="note" data-i18n="ui.columnsIntro">周期を選ぶか、上の棒グラフの棒を押すと、その周期で分けた列ごとの出現回数とICを並べます。鍵長で分けると、列のICはおおむね言語の値に戻ります（1列の文字が少ないと、列ごとの値はばらつきます）。</p>
+                <div class="inline-actions">
+                  <label for="columnPeriod" class="field-label" data-i18n="ui.columnPeriodLabel">周期</label>
+                  <select id="columnPeriod"></select>
+                </div>
+                <p id="columnSummary" class="verdict" aria-live="polite"></p>
+                <div id="columnView" class="column-grid"></div>
+                <h4 data-i18n="ui.kappaHeading">ずらして重ねる（κテスト）</h4>
+                <p class="note" data-i18n="ui.kappaIntro">暗号文を自分自身とk文字ずらして重ね、同じ文字が重なる位置を数えます。kが鍵長の倍数なら、重なる2文字は同じずらしで暗号化されているので、平文と同じくらい一致します。フリードマンが使った考え方ですが、列に分ける方法より当たりにくい目安です。</p>
+                <div class="inline-actions">
+                  <label for="kappaShift" class="field-label" data-i18n="ui.kappaShiftLabel">ずらす文字数（k）</label>
+                  <select id="kappaShift"></select>
+                </div>
+                <div id="kappaRows" class="kappa-rows"></div>
+                <p id="kappaInfo" class="verdict" aria-live="polite"></p>
+                <canvas id="kappaCanvas" role="img" aria-label="ずらす文字数ごとの一致率の棒グラフ" data-i18n-attr="aria-label:ui.kappaLabel"></canvas>
+                <h4 data-i18n="ui.friedmanHeading">フリードマンの式（鍵長の概算）</h4>
+                <p class="note" data-i18n="ui.friedmanNote">暗号文全体のICだけから鍵長を見積もる昔からの式です。短い暗号文や長い鍵では外れやすい目安なので、周期ごとのICと見比べてください。</p>
+                <p id="friedmanFormula" class="formula-line"></p>
+                <p id="friedmanVerdict" class="verdict"></p>
                 <h4 data-i18n="ui.continueHeading">ほかのツールで続ける</h4>
                 <ul class="tool-links" id="keyLengthLinks"></ul>
               </div>
