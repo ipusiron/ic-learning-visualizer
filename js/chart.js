@@ -4,7 +4,7 @@
 import { chartMax, standardError, RANDOM_IC } from './ic-core.js';
 
 const HEIGHT = 220;
-const M = { left: 56, right: 16, top: 16, bottom: 44 };
+const M = { left: 56, right: 28, top: 16, bottom: 44 };
 const FONT = '12px system-ui, -apple-system, "Segoe UI", sans-serif';
 
 function cssVar(name) {
