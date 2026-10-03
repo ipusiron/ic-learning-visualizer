@@ -3,77 +3,103 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
   <title>IC Learning Visualizer - 一致指数を段階的に理解</title>
-  <meta name="description" content="Index of Coincidence（IC）を初心者でも理解できるよう段階的に学習できる教育ツール">
+  <meta name="description" content="一致指数（IC）を、計算・サンプルの比較・モンテカルロ実験・鍵長推定で段階的に学べる教育ツール">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <script src="js/theme-init.js"></script>
+  <script src="js/file-check.js" defer></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="container">
-    <header class="header">
-      <h1>
-        <span class="logo">IC Learning Visualizer</span>
-        <span class="subtitle">一致指数を段階的に理解する教育ツール</span>
-      </h1>
-    </header>
+  <noscript>
+    <p class="boot-notice">このツールはJavaScriptを使います。ブラウザーの設定でJavaScriptを有効にしてください。<br>
+    This tool needs JavaScript. Please enable JavaScript in your browser settings.</p>
+  </noscript>
+  <div id="fileNotice" class="boot-notice" role="alert" hidden>
+    <div data-lang="ja">
+      <p>このページをファイルとして直接開いたため、ブラウザーがプログラム（ES modules）を読み込めず、ツールが動いていません。</p>
+      <p>フォルダーで<code>python -m http.server 8000</code>などを実行し、<code>http://localhost:8000/</code>で開いてください。</p>
+      <p>公開版は<a href="https://ipusiron.github.io/ic-learning-visualizer/" rel="noopener noreferrer">https://ipusiron.github.io/ic-learning-visualizer/</a>です。</p>
+    </div>
+    <div data-lang="en" hidden>
+      <p>This page was opened directly as a file, so the browser could not load its program (ES modules) and the tool is not running.</p>
+      <p>Run <code>python -m http.server 8000</code> or similar in the folder and open <code>http://localhost:8000/</code>.</p>
+      <p>The public version is at <a href="https://ipusiron.github.io/ic-learning-visualizer/" rel="noopener noreferrer">https://ipusiron.github.io/ic-learning-visualizer/</a>.</p>
+    </div>
+  </div>
 
-    <!-- タブナビゲーション -->
-    <nav class="tabs">
-      <button class="tab-button active" data-tab="learn">
-        <span class="tab-icon">📚</span>
-        <span class="tab-label">ステップ学習</span>
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-side" aria-hidden="true"></div>
+      <div class="hero">
+        <h1>IC Learning Visualizer</h1>
+        <p class="subtitle">一致指数（IC）を段階的に理解する教育ツール</p>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="btnTheme" class="icon-btn"></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <nav class="tabs" role="tablist" aria-label="機能の切り替え">
+      <button type="button" class="tab-button" role="tab" id="tab-learn" aria-controls="panel-learn" aria-selected="true" data-tab="learn">
+        <span class="tab-icon" aria-hidden="true">📚</span><span class="tab-label">ステップ学習</span>
       </button>
-      <button class="tab-button" data-tab="analyze">
-        <span class="tab-icon">📊</span>
-        <span class="tab-label">サンプル分析</span>
+      <button type="button" class="tab-button" role="tab" id="tab-analyze" aria-controls="panel-analyze" aria-selected="false" data-tab="analyze">
+        <span class="tab-icon" aria-hidden="true">📊</span><span class="tab-label">サンプル分析</span>
       </button>
-      <button class="tab-button" data-tab="monte">
-        <span class="tab-icon">🎲</span>
-        <span class="tab-label">モンテカルロ実験</span>
+      <button type="button" class="tab-button" role="tab" id="tab-monte" aria-controls="panel-monte" aria-selected="false" data-tab="monte">
+        <span class="tab-icon" aria-hidden="true">🎲</span><span class="tab-label">モンテカルロ実験</span>
       </button>
-      <button class="tab-button" data-tab="advanced">
-        <span class="tab-icon">🔐</span>
-        <span class="tab-label">応用・暗号解析</span>
+      <button type="button" class="tab-button" role="tab" id="tab-advanced" aria-controls="panel-advanced" aria-selected="false" data-tab="advanced">
+        <span class="tab-icon" aria-hidden="true">🔐</span><span class="tab-label">応用・暗号解析</span>
       </button>
     </nav>
 
     <!-- タブ1: ステップ学習 -->
-    <div class="tab-content active" id="tab-learn">
+    <section class="tab-content" id="panel-learn" role="tabpanel" aria-labelledby="tab-learn">
       <div class="card">
         <h2>ICを段階的に理解しよう</h2>
-        
         <div class="step-container">
           <div class="step-nav">
-            <button id="prevStep" class="btn-nav" disabled>← 前へ</button>
-            <span class="step-indicator">ステップ <span id="currentStep">1</span> / <span id="totalSteps">5</span></span>
-            <button id="nextStep" class="btn-nav">次へ →</button>
+            <button type="button" id="prevStep" class="btn-nav" disabled>← 前へ</button>
+            <span class="step-indicator" aria-live="polite">ステップ <span id="currentStep">1</span> / <span id="totalSteps">5</span></span>
+            <button type="button" id="nextStep" class="btn-nav">次へ →</button>
           </div>
 
-          <!-- ステップ1: 概念理解 -->
-          <div class="step active" data-step="1">
+          <!-- ステップ1: 概念 -->
+          <div class="step" data-step="1">
             <h3>ステップ1: ICとは何か？</h3>
             <div class="concept-box">
               <p class="highlight">
-                <strong>一致指数（IC）</strong>とは、「テキストから2文字をランダムに選んだとき、それらが同じ文字である確率」です。
+                <strong>一致指数（IC）</strong>とは、「テキストから2文字を（同じ位置を選ばずに）ランダムに選んだとき、それらが同じ文字である確率」です。
               </p>
               <div class="example-visual">
-                <div class="text-sample">
+                <div class="text-sample" aria-label="HELLO">
                   <span class="char">H</span><span class="char">E</span><span class="char">L</span><span class="char">L</span><span class="char">O</span>
                 </div>
-                <div class="arrow">↓</div>
+                <div class="arrow" aria-hidden="true">↓</div>
                 <div class="explanation">
-                  たとえば「HELLO」から2文字選ぶと...<br>
-                  - H と E → 違う（×）<br>
-                  - L と L → 同じ（○）<br>
-                  - 同じ文字ペアを選ぶ方法: L×(L-1) = 2×1 = 2通り
+                  <p>たとえば「HELLO」から2文字を選ぶと……</p>
+                  <ul>
+                    <li>H と E → 違う（×）</li>
+                    <li>L と L → 同じ（○）</li>
+                    <li>選び方は、1つ目が5通り・2つ目が残りの4通りで、5×4＝20通り（順序を区別して数える）</li>
+                    <li>同じ文字になる選び方は、Lの2個から順に選ぶ 2×1＝2通り</li>
+                    <li>IC＝2÷20＝0.1000（10%の確率で同じ文字になる）</li>
+                  </ul>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- ステップ2: 計算を見てみよう -->
-          <div class="step" data-step="2">
+          <!-- ステップ2: 計算 -->
+          <div class="step" data-step="2" hidden>
             <h3>ステップ2: 実際に計算してみよう</h3>
-            
             <div class="formula-intro">
               <h4>📐 ICの計算式</h4>
               <div class="formula-display">
@@ -85,493 +111,405 @@
                 </div>
               </div>
               <div class="formula-explanation">
-                <p><strong>各項目の意味：</strong></p>
+                <p><strong>各項目の意味</strong></p>
                 <ul>
-                  <li><strong>n<sub>i</sub></strong>: 各文字iの出現回数</li>
-                  <li><strong>N</strong>: 総文字数</li>
-                  <li><strong>Σ n<sub>i</sub>(n<sub>i</sub>-1)</strong>: 同じ文字のペア数の合計</li>
-                  <li><strong>N(N-1)</strong>: 全文字から2つ選ぶ方法の数</li>
+                  <li>n<sub>i</sub>: 各文字iの出現回数</li>
+                  <li>N: 総文字数</li>
+                  <li>Σ n<sub>i</sub>(n<sub>i</sub>-1): 同じ文字の組の数の合計</li>
+                  <li>N(N-1): 全文字から2つを選ぶ方法の数</li>
                 </ul>
               </div>
             </div>
-            
+
             <div class="interactive-calc">
-              <input type="text" id="simpleText" value="HELLO" maxlength="20" />
-              <button id="calcSimple" class="btn-primary">計算する</button>
-              
+              <label for="simpleText" class="field-label">英字を入れる（30文字まで）</label>
+              <div class="inline-form">
+                <input type="text" id="simpleText" value="HELLO" maxlength="30" autocomplete="off" spellcheck="false" />
+                <button type="button" id="calcSimple" class="btn-primary">計算する</button>
+              </div>
+              <p id="simpleStatus" class="status" aria-live="polite"></p>
+
               <div class="calc-result">
-                <table class="freq-table">
-                  <thead>
-                    <tr>
-                      <th>文字</th>
-                      <th>出現回数(n)</th>
-                      <th>
-                        ペア数 n(n-1)
-                        <button class="help-icon" data-help="pair-count">?</button>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody id="freqTableBody">
-                    <!-- 動的に生成 -->
-                  </tbody>
-                </table>
-                
+                <div class="table-wrap">
+                  <table class="freq-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">文字</th>
+                        <th scope="col">出現回数(n)</th>
+                        <th scope="col">組の数 n(n-1) <button type="button" class="help-icon" data-help="pair-count" aria-label="n(n-1) の意味">?</button></th>
+                      </tr>
+                    </thead>
+                    <tbody id="freqTableBody"></tbody>
+                  </table>
+                </div>
+
                 <div class="formula-breakdown">
                   <h4>🧮 数式の各項目を計算</h4>
                   <div class="formula-step">
-                    <span class="label">
-                      <strong>N</strong> (総文字数):
-                    </span>
+                    <span class="label"><strong>N</strong>（総文字数）</span>
                     <span id="stepN">5</span>
                   </div>
                   <div class="formula-step">
-                    <span class="label">
-                      <strong>N(N-1)</strong> (分母):
-                    </span>
-                    <span id="stepDenom">20</span>
-                    <span class="calculation" id="denomCalc">= 5 × 4</span>
+                    <span class="label"><strong>N(N-1)</strong>（分母）</span>
+                    <span><span id="stepDenom">20</span> <span class="calculation" id="denomCalc">= 5 × 4</span></span>
                   </div>
                   <div class="formula-step">
-                    <span class="label">
-                      <strong>Σn<sub>i</sub>(n<sub>i</sub>-1)</strong> (分子):
-                      <button class="help-icon" data-help="pair-count">?</button>
-                    </span>
+                    <span class="label"><strong>Σn<sub>i</sub>(n<sub>i</sub>-1)</strong>（分子）</span>
                     <span id="stepNum">2</span>
                   </div>
-                  <div class="formula-step highlight">
-                    <span class="label">
-                      <strong>IC</strong> = 分子 ÷ 分母 =
-                    </span>
-                    <span id="stepIC">0.1000</span>
-                    <span class="calculation" id="icCalc">= 2 ÷ 20</span>
+                  <div class="formula-step result">
+                    <span class="label"><strong>IC</strong> = 分子 ÷ 分母</span>
+                    <span><span id="stepIC">0.1000</span> <span class="calculation" id="icCalc">= 2 ÷ 20</span></span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- ステップ3: パターンを理解 -->
-          <div class="step" data-step="3">
-            <h3>ステップ3: 文字分布とICの関係</h3>
-            <div class="pattern-demo">
-              <div class="pattern-item">
-                <h4>すべて異なる文字</h4>
-                <div class="mini-text">ABCDEFGHIJ</div>
-                <div class="mini-bar-chart" id="pattern1"></div>
-                <div class="ic-value">IC = 0.0000</div>
-                <p class="desc">重複なし → 一致確率0%</p>
-              </div>
-              
-              <div class="pattern-item">
-                <h4>完全ランダム</h4>
-                <div class="mini-text">QJXZFWHMKP</div>
-                <div class="mini-bar-chart" id="pattern2"></div>
-                <div class="ic-value">IC ≈ 0.0385</div>
-                <p class="desc">26文字均等出現 → 低いIC</p>
-              </div>
-              
-              <div class="pattern-item">
-                <h4>均等分布（少数文字）</h4>
-                <div class="mini-text">AABBCCDDEE</div>
-                <div class="mini-bar-chart" id="pattern3"></div>
-                <div class="ic-value">IC = 0.1111</div>
-                <p class="desc">5文字が均等 → 中程度IC</p>
-              </div>
-              
-              <div class="pattern-item">
-                <h4>偏った分布</h4>
-                <div class="mini-text">AAAAAABBCD</div>
-                <div class="mini-bar-chart" id="pattern4"></div>
-                <div class="ic-value">IC = 0.3111</div>
-                <p class="desc">特定文字が多い → 高いIC</p>
-              </div>
+          <!-- ステップ3: 文字の分布と IC -->
+          <div class="step" data-step="3" hidden>
+            <h3>ステップ3: 文字の分布とICの関係</h3>
+            <p>10文字の例で、同じ文字が増えるほどICが大きくなることを確かめます（ICはこの画面で計算しています）。</p>
+            <div class="pattern-demo" id="patternDemo"></div>
+            <p class="note">26文字が均等に出る長い文では、ICは1/26（約0.0385）に近づきます（ステップ4）。10文字では全部違う文字にもなりうるので、0になることがあります。</p>
+          </div>
+
+          <!-- ステップ4: 実際の言語と暗号文 -->
+          <div class="step" data-step="4" hidden>
+            <h3>ステップ4: 実際の言語と暗号文のIC</h3>
+            <div class="language-comparison" id="languageComparison"></div>
+            <div class="insight-box">
+              💡 <strong>大事な点</strong>
+              自然言語は文字の出現頻度に偏りがあるので、ICが1/26より大きくなります。多表式暗号（ヴィジュネル暗号など）は同じ平文の文字を何通りもの文字に変えるので、ICが1/26に近づきます。この差を使って、暗号の種類の見当を付けたり、鍵長を推定したりできます。
             </div>
           </div>
 
-          <!-- ステップ4: 実世界の例 -->
-          <div class="step" data-step="4">
-            <h3>ステップ4: 実際の言語のIC</h3>
-            <div class="real-world">
-              <div class="language-comparison">
-                <div class="lang-item">
-                  <h4>🎲 完全ランダム</h4>
-                  <div class="ic-bar" style="width: 38.5px"></div>
-                  <span class="ic-label">IC ≈ 0.0385</span>
-                  <p>26文字が均等に出現</p>
-                </div>
-                
-                <div class="lang-item">
-                  <h4>🇬🇧 英語</h4>
-                  <div class="ic-bar english" style="width: 67px"></div>
-                  <span class="ic-label">IC ≈ 0.067</span>
-                  <p>E, T, A などが頻出</p>
-                </div>
-                
-                <div class="lang-item">
-                  <h4>🔐 暗号文</h4>
-                  <div class="ic-bar cipher" style="width: 45px"></div>
-                  <span class="ic-label">IC ≈ 0.045</span>
-                  <p>多表式暗号で平坦化</p>
-                </div>
-              </div>
-              
-              <div class="insight-box">
-                💡 <strong>重要な洞察：</strong>
-                自然言語は文字の出現頻度に偏りがあるため、ICが高くなります。
-                これを利用して暗号解読や言語判定ができるのです！
-              </div>
-            </div>
-          </div>
-
-          <!-- ステップ5: 確認クイズ -->
-          <div class="step" data-step="5">
+          <!-- ステップ5: クイズ -->
+          <div class="step" data-step="5" hidden>
             <h3>ステップ5: 理解度チェック</h3>
             <div class="quiz-section">
-              <div class="quiz-item">
-                <p class="question">Q1: 次のうち、ICが最も高いのはどれ？</p>
+              <fieldset class="quiz-item">
+                <legend class="question">Q1: 次のうち、ICが最も高いのはどれ？</legend>
                 <div class="quiz-options">
                   <label><input type="radio" name="q1" value="a"> ABCDEF</label>
                   <label><input type="radio" name="q1" value="b"> AAAAAA</label>
                   <label><input type="radio" name="q1" value="c"> ABABAB</label>
                 </div>
-                <button class="btn-check" data-quiz="1">答えを確認</button>
-                <div class="quiz-result" id="result1"></div>
-              </div>
-              
-              <div class="quiz-item">
-                <p class="question">Q2: 英語のICが約0.067である理由は？</p>
+                <button type="button" class="btn-check" data-quiz="1">答えを確認</button>
+                <p class="quiz-result" id="result1" aria-live="polite"></p>
+              </fieldset>
+              <fieldset class="quiz-item">
+                <legend class="question">Q2: 英語のICが約0.067になるのはなぜ？</legend>
                 <div class="quiz-options">
                   <label><input type="radio" name="q2" value="a"> 文字が26個あるから</label>
-                  <label><input type="radio" name="q2" value="b"> 特定の文字（E,T,A等）の出現頻度が高いから</label>
+                  <label><input type="radio" name="q2" value="b"> 特定の文字（E・T・Aなど）の出現頻度が高いから</label>
                   <label><input type="radio" name="q2" value="c"> すべての文字が均等に出現するから</label>
                 </div>
-                <button class="btn-check" data-quiz="2">答えを確認</button>
-                <div class="quiz-result" id="result2"></div>
-              </div>
+                <button type="button" class="btn-check" data-quiz="2">答えを確認</button>
+                <p class="quiz-result" id="result2" aria-live="polite"></p>
+              </fieldset>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
     <!-- タブ2: サンプル分析 -->
-    <div class="tab-content" id="tab-analyze">
+    <section class="tab-content" id="panel-analyze" role="tabpanel" aria-labelledby="tab-analyze" hidden>
       <div class="card">
-        <h2>様々なテキストのIC分析</h2>
-        
+        <h2>さまざまなテキストのIC分析</h2>
         <div class="sample-selector">
-          <h3>サンプルを選択</h3>
+          <h3>サンプルを選ぶ</h3>
           <div class="sample-buttons">
-            <button class="sample-btn" data-sample="english">📖 英語文章</button>
-            <button class="sample-btn" data-sample="random">🎲 ランダム</button>
-            <button class="sample-btn" data-sample="caesar">🔄 シーザー暗号</button>
-            <button class="sample-btn" data-sample="vigenere">🔐 ヴィジュネル暗号</button>
-            <button class="sample-btn" data-sample="german">🇩🇪 ドイツ語</button>
-            <button class="sample-btn" data-sample="french">🇫🇷 フランス語</button>
-            <button class="sample-btn" data-sample="repeated">🔁 繰り返し</button>
-            <button class="sample-btn" data-sample="custom">✏️ カスタム</button>
+            <button type="button" class="sample-btn" data-sample="english" aria-pressed="false">📖 英語の文章</button>
+            <button type="button" class="sample-btn" data-sample="random" aria-pressed="false">🎲 ランダム</button>
+            <button type="button" class="sample-btn" data-sample="caesar" aria-pressed="false">🔄 シーザー暗号</button>
+            <button type="button" class="sample-btn" data-sample="vigenere" aria-pressed="false">🔐 ヴィジュネル暗号</button>
+            <button type="button" class="sample-btn" data-sample="german" aria-pressed="false">🇩🇪 ドイツ語</button>
+            <button type="button" class="sample-btn" data-sample="french" aria-pressed="false">🇫🇷 フランス語</button>
+            <button type="button" class="sample-btn" data-sample="repeated" aria-pressed="false">🔁 繰り返し</button>
+            <button type="button" class="sample-btn" data-sample="custom" aria-pressed="false">✏️ 自分の文</button>
           </div>
+          <p id="sampleNote" class="note"></p>
         </div>
 
         <div class="analysis-area">
           <div class="input-section">
-            <h3>テキスト入力</h3>
-            <textarea id="analyzeText" rows="6" placeholder="分析したいテキストを入力..."></textarea>
+            <label for="analyzeText" class="field-label">分析するテキスト（10万字まで）</label>
+            <textarea id="analyzeText" rows="7" spellcheck="false" placeholder="分析したいテキストを入れる"></textarea>
             <div class="input-options">
-              <label><input type="checkbox" id="analyzeAZ" checked> A-Zのみ（大文字化・記号除去）</label>
-              <label><input type="checkbox" id="analyzeSpaces" checked> 空白・改行を除去</label>
+              <label><input type="checkbox" id="analyzeAZ" checked> A〜Zだけを数える（大文字にし、アクセント記号を外す。ß は SS）</label>
+              <label><input type="checkbox" id="analyzeSpaces" checked disabled> 空白・改行・記号を除く（A〜Zだけを数えないとき）</label>
             </div>
-            <button id="btnAnalyze" class="btn-primary">分析実行</button>
+            <button type="button" id="btnAnalyze" class="btn-primary">分析する</button>
+            <p id="analyzeStatus" class="status" aria-live="polite"></p>
           </div>
 
           <div class="results-grid">
             <div class="chart-section">
-              <h3>文字頻度分布</h3>
-              <div id="analysisChart" class="freq-chart"></div>
+              <h3>文字の出現回数</h3>
+              <div id="analysisChart" class="freq-chart" role="img" aria-label="文字の出現回数の棒グラフ"></div>
+              <p id="chartOther" class="note" hidden></p>
             </div>
-            
             <div class="metrics-section">
-              <h3>統計情報</h3>
+              <h3>統計</h3>
               <div class="metric-cards">
                 <div class="metric-card">
-                  <span class="metric-label">文字数</span>
+                  <span class="metric-label">文字数（N）</span>
                   <span class="metric-value" id="metricN">0</span>
                 </div>
                 <div class="metric-card">
-                  <span class="metric-label">IC値</span>
+                  <span class="metric-label">IC</span>
                   <span class="metric-value large" id="metricIC">0.0000</span>
                 </div>
                 <div class="metric-card">
-                  <span class="metric-label">
-                    推定タイプ
-                    <button class="help-icon" data-help="ic-ranges">?</button>
-                  </span>
+                  <span class="metric-label">区分 <button type="button" class="help-icon" data-help="ic-ranges" aria-label="ICの区分の説明">?</button></span>
                   <span class="metric-value" id="metricType">未分析</span>
                 </div>
               </div>
-              
               <div class="ic-comparison">
-                <h4>IC値の比較</h4>
+                <h4>ICの比較</h4>
                 <div class="comparison-bars">
                   <div class="comp-bar">
-                    <label>ランダム</label>
-                    <div class="bar-bg">
-                      <div class="bar-fill random" style="width: 38.5%"></div>
-                      <span>0.0385</span>
-                    </div>
+                    <span class="comp-label">ランダム（1/26）</span>
+                    <div class="bar-bg"><div class="bar-fill random" id="barRandom"></div></div>
+                    <span class="comp-value" id="valueRandom">0.0385</span>
                   </div>
                   <div class="comp-bar">
-                    <label>分析結果</label>
-                    <div class="bar-bg">
-                      <div class="bar-fill current" id="currentICBar" style="width: 0%"></div>
-                      <span id="currentICValue">0.0000</span>
-                    </div>
+                    <span class="comp-label">分析結果</span>
+                    <div class="bar-bg"><div class="bar-fill current" id="currentICBar"></div></div>
+                    <span class="comp-value" id="currentICValue">0.0000</span>
                   </div>
                   <div class="comp-bar">
-                    <label>英語</label>
-                    <div class="bar-bg">
-                      <div class="bar-fill english" style="width: 67%"></div>
-                      <span>0.0670</span>
-                    </div>
+                    <span class="comp-label">英語</span>
+                    <div class="bar-bg"><div class="bar-fill english" id="barEnglish"></div></div>
+                    <span class="comp-value" id="valueEnglish">0.0667</span>
                   </div>
                 </div>
               </div>
-              
               <div class="type-inference">
-                <h4>テキストタイプ推定</h4>
-                <div id="typeInference" class="inference-result">
-                  分析を実行してください
-                </div>
+                <h4>テキストの区分</h4>
+                <div id="typeInference" class="inference-result" aria-live="polite">分析を実行してください</div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
     <!-- タブ3: モンテカルロ実験 -->
-    <div class="tab-content" id="tab-monte">
+    <section class="tab-content" id="panel-monte" role="tabpanel" aria-labelledby="tab-monte" hidden>
       <div class="card">
         <h2>モンテカルロ法でICを体感</h2>
-        
-        <div class="monte-explanation">
-          <div class="explain-box">
-            <h3>🎲 モンテカルロ法とは？</h3>
-            <p>
-              ランダムサンプリングを繰り返して統計的性質を推定する方法です。
-              ここでは「テキストから2文字を無作為に選ぶ」実験を何度も繰り返し、
-              一致する確率（= IC）を実験的に求めます。
-            </p>
-          </div>
+        <div class="explain-box">
+          <h3>🎲 モンテカルロ法とは？</h3>
+          <p>ランダムな試行を繰り返して、確率などの値を実験で求める方法です。ここでは「テキストから2文字を（同じ位置を選ばずに）ランダムに選ぶ」試行を何度も繰り返し、同じ文字になった割合がICに近づく様子を見ます。</p>
         </div>
 
         <div class="monte-setup">
-          <h3>実験設定</h3>
+          <h3>実験の設定</h3>
           <div class="setup-grid">
             <div class="setup-item">
-              <label>対象テキスト</label>
+              <label for="monteTextSource">対象のテキスト</label>
               <select id="monteTextSource">
-                <option value="current">現在の分析テキスト</option>
-                <option value="english">英語サンプル</option>
-                <option value="random">ランダム文字列</option>
-                <option value="custom">カスタムテキスト</option>
+                <option value="current">サンプル分析タブのテキスト</option>
+                <option value="english">英語のサンプル</option>
+                <option value="random">ランダムのサンプル</option>
+                <option value="vigenere">ヴィジュネル暗号のサンプル</option>
+                <option value="custom">自分の文</option>
               </select>
             </div>
             <div class="setup-item">
-              <label>試行回数</label>
-              <input type="number" id="monteTrials" value="1000" min="100" max="100000" step="100">
+              <label for="monteTrials">試行回数（100〜100,000）</label>
+              <input type="number" id="monteTrials" value="1000" min="100" max="100000" step="100" inputmode="numeric">
             </div>
             <div class="setup-item">
-              <label>アニメーション速度</label>
+              <label for="monteSpeed">速さ</label>
               <select id="monteSpeed">
-                <option value="slow" selected>ゆっくり（学習用）</option>
-                <option value="normal">通常</option>
-                <option value="fast">高速</option>
+                <option value="slow" selected>ゆっくり（1回ずつ見る）</option>
+                <option value="normal">ふつう</option>
+                <option value="fast">速い（すぐに結果）</option>
               </select>
             </div>
           </div>
-          
-          <div class="custom-text-section" id="customTextSection" style="display: none;">
-            <h4>カスタムテキスト入力</h4>
-            <textarea id="monteCustomText" rows="4" placeholder="実験に使用したいテキストを入力してください...&#10;例: HELLO WORLD&#10;&#10;注意: 英字のみが処理対象となります。"></textarea>
-            <div class="text-info">
-              <span class="info-label">文字数:</span>
-              <span id="customTextLength">0</span>
-              <span class="info-label">処理後:</span>
-              <span id="customTextProcessed">0文字</span>
-            </div>
+          <div class="custom-text-section" id="customTextSection" hidden>
+            <label for="monteCustomText" class="field-label">自分の文（A〜Zだけを使う）</label>
+            <textarea id="monteCustomText" rows="4" spellcheck="false" placeholder="例: HELLO WORLD"></textarea>
+            <p class="text-info">入力 <span id="customTextLength">0</span> 字 → A〜Z <span id="customTextProcessed">0</span> 字</p>
           </div>
         </div>
 
         <div class="text-preview-section">
-          <h3>選択されたテキスト</h3>
-          <div class="text-preview" id="textPreview">
-            テキストを選択してください
-          </div>
+          <h3>選んだテキスト（A〜Zに整えたもの）</h3>
+          <div class="text-preview" id="textPreview"></div>
           <div class="text-stats">
-            <span class="stat-item">
-              <span class="stat-label">文字数:</span>
-              <span class="stat-value" id="previewLength">0</span>
-            </span>
-            <span class="stat-item">
-              <span class="stat-label">理論IC:</span>
-              <span class="stat-value" id="previewIC">0.0000</span>
-            </span>
+            <span class="stat-item"><span class="stat-label">文字数</span> <span class="stat-value" id="previewLength">0</span></span>
+            <span class="stat-item"><span class="stat-label">理論値（IC）</span> <span class="stat-value" id="previewIC">0.0000</span></span>
           </div>
         </div>
 
         <div class="monte-controls">
-          <button id="monteStart" class="btn-primary">実験開始</button>
-          <button id="monteStop" class="btn-danger" disabled>停止</button>
-          <button id="monteReset" class="btn-secondary">リセット</button>
+          <button type="button" id="monteStart" class="btn-primary">実験開始</button>
+          <button type="button" id="monteStop" class="btn-danger" disabled>停止</button>
+          <button type="button" id="monteReset" class="btn-secondary">リセット</button>
         </div>
+        <p id="monteStatus" class="status" aria-live="polite"></p>
 
         <div class="monte-visualization">
           <div class="current-trial">
-            <h3>現在の試行</h3>
+            <h3>直近の試行</h3>
             <div class="trial-display">
-              <div class="text-display" id="monteTextDisplay">
-                <!-- テキストと選択位置を表示 -->
-              </div>
+              <div class="pick-window" id="pickWindow1" aria-label="位置1の前後"></div>
+              <div class="pick-window" id="pickWindow2" aria-label="位置2の前後"></div>
               <div class="selection-info">
-                <div class="pos-info">
-                  <span class="pos-label">位置1:</span>
-                  <span class="pos-value" id="pos1">-</span>
-                  <span class="char-value" id="char1">-</span>
-                </div>
-                <div class="pos-info">
-                  <span class="pos-label">位置2:</span>
-                  <span class="pos-value" id="pos2">-</span>
-                  <span class="char-value" id="char2">-</span>
-                </div>
-                <div class="match-result" id="matchResult">
-                  結果: <span class="match-badge">-</span>
-                </div>
+                <div class="pos-info"><span class="pos-label">位置1</span><span class="pos-value" id="pos1">-</span><span class="char-value" id="char1">-</span></div>
+                <div class="pos-info"><span class="pos-label">位置2</span><span class="pos-value" id="pos2">-</span><span class="char-value" id="char2">-</span></div>
+                <div class="match-result">結果: <span class="match-badge" id="matchBadge">-</span></div>
               </div>
             </div>
           </div>
 
           <div class="monte-stats">
-            <h3>統計情報</h3>
+            <h3>統計</h3>
             <div class="stats-grid">
-              <div class="stat-card">
-                <span class="stat-label">試行回数</span>
-                <span class="stat-value" id="trialCount">0</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">一致回数</span>
-                <span class="stat-value" id="matchCount">0</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">実験IC</span>
-                <span class="stat-value large" id="experimentalIC">0.0000</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">理論IC</span>
-                <span class="stat-value" id="theoreticalIC">0.0000</span>
-              </div>
+              <div class="stat-card"><span class="stat-label">試行回数</span><span class="stat-value" id="trialCount">0</span></div>
+              <div class="stat-card"><span class="stat-label">一致回数</span><span class="stat-value" id="matchCount">0</span></div>
+              <div class="stat-card"><span class="stat-label">実験の値</span><span class="stat-value large" id="experimentalIC">0.0000</span></div>
+              <div class="stat-card"><span class="stat-label">理論値（IC）</span><span class="stat-value" id="theoreticalIC">0.0000</span></div>
             </div>
-            
             <div class="convergence-chart">
               <h4>収束グラフ</h4>
-              <canvas id="convergenceCanvas"></canvas>
+              <canvas id="convergenceCanvas" role="img" aria-label="試行回数と実験の値の収束グラフ"></canvas>
             </div>
-            
-            <div class="progress-bar">
+            <div class="progress-bar" role="progressbar" aria-label="進み具合" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="monteProgressBar">
               <div class="progress-fill" id="monteProgress"></div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
     <!-- タブ4: 応用・暗号解析 -->
-    <div class="tab-content" id="tab-advanced">
+    <section class="tab-content" id="panel-advanced" role="tabpanel" aria-labelledby="tab-advanced" hidden>
       <div class="card">
         <h2>ICの応用と暗号解析</h2>
-        
         <div class="application-sections">
           <section class="app-section">
-            <h3>📊 言語判定</h3>
-            <p>各言語には固有のIC値があります：</p>
-            <ul class="lang-ic-list">
-              <li>英語: 0.066-0.070</li>
-              <li>フランス語: 0.074-0.078</li>
-              <li>ドイツ語: 0.072-0.076</li>
-              <li>スペイン語: 0.073-0.077</li>
-              <li>イタリア語: 0.074-0.076</li>
-              <li>日本語（ローマ字）: 0.076-0.080</li>
-            </ul>
+            <h3>📊 言語ごとのIC</h3>
+            <p>言語ごとの値は出典によって少しずつ違います。2つの出典の値を並べます（数える文章で変わるので目安です）。</p>
+            <div class="table-wrap">
+              <table class="data-table" id="languageTable">
+                <thead>
+                  <tr>
+                    <th scope="col">言語</th>
+                    <th scope="col">Friedman &amp; Callimahos（正規化値 → IC）</th>
+                    <th scope="col">dCode</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p class="note">正規化値は IC×26。出典: W. F. Friedman・L. D. Callimahos『Military Cryptanalytics, Part I』（Wikipedia「Index of coincidence」の表）、dCode「Index of Coincidence」。</p>
           </section>
 
           <section class="app-section">
-            <h3>🔐 暗号タイプの判別</h3>
+            <h3>🔐 暗号の種類とIC</h3>
             <div class="cipher-types">
               <div class="cipher-card">
-                <h4>単一換字式暗号</h4>
-                <p>IC ≈ 平文と同じ（0.065-0.070）</p>
-                <p class="desc">文字を1対1で置換するだけなので、頻度分布は保持される</p>
+                <h4>単一換字式暗号（シーザー暗号など）</h4>
+                <p class="cipher-ic">IC ＝ 平文と同じ（英語なら約0.066）</p>
+                <p class="desc">文字を1対1で置き換えるだけなので、出現回数の組み合わせは平文と変わらない</p>
               </div>
               <div class="cipher-card">
-                <h4>多表式暗号</h4>
-                <p>IC ≈ 0.038-0.050</p>
-                <p class="desc">複数の換字表を使うため、頻度分布が平坦化される</p>
+                <h4>多表式暗号（ヴィジュネル暗号など）</h4>
+                <p class="cipher-ic">IC ＝ 鍵長が長いほど1/26（約0.0385）に近づく</p>
+                <p class="desc">同じ平文の文字が鍵の位置によって違う文字になり、出現回数が平らになる（鍵長5で約0.044）</p>
               </div>
               <div class="cipher-card">
                 <h4>転置式暗号</h4>
-                <p>IC ≈ 平文と同じ</p>
-                <p class="desc">文字の順序を変えるだけなので、頻度は変わらない</p>
+                <p class="cipher-ic">IC ＝ 平文と同じ</p>
+                <p class="desc">文字の順序を変えるだけなので、出現回数は変わらない</p>
               </div>
             </div>
           </section>
 
           <section class="app-section">
-            <h3>🔑 ヴィジュネル暗号の鍵長推定</h3>
-            <div class="vigenere-demo">
-              <p>フリードマンのテストを使った鍵長推定：</p>
-              <div class="key-length-estimator">
-                <textarea id="vigenereText" rows="4" placeholder="ヴィジュネル暗号文を入力..."></textarea>
-                <button id="estimateKeyLength" class="btn-primary">鍵長を推定</button>
-                <div id="keyLengthResult" class="result-box"></div>
+            <h3>🔑 ヴィジュネル暗号の鍵長推定（周期ごとのIC）</h3>
+            <p>暗号文を周期 L で列に分け（1, L+1, 2L+1, …文字目が列1）、列ごとのICを平均します。周期が鍵長（またはその倍数）なら、各列は同じずらしのシーザー暗号なので、ICが言語の値に戻ります。平均が<span id="thresholdText">0.058</span>以上の周期を小さい順に並べ、残りを平均の大きい順に続けます。</p>
+            <div class="key-length-estimator">
+              <label for="vigenereText" class="field-label">ヴィジュネル暗号の暗号文（英字20字以上）</label>
+              <textarea id="vigenereText" rows="4" spellcheck="false" placeholder="暗号文を入れる"></textarea>
+              <div class="inline-actions">
+                <button type="button" id="estimateKeyLength" class="btn-primary">鍵長を推定</button>
+                <button type="button" id="loadVigenereSample" class="btn-secondary">サンプルの暗号文を入れる</button>
+              </div>
+              <p id="keyLengthStatus" class="status" aria-live="polite"></p>
+              <div id="keyLengthResult" class="result-box" hidden>
+                <div class="table-wrap">
+                  <table class="data-table" id="keyLengthTable">
+                    <thead>
+                      <tr><th scope="col">順位</th><th scope="col">周期（鍵長）</th><th scope="col">列の平均IC</th><th scope="col">しきい値</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+                <p id="keyLengthVerdict" class="verdict"></p>
+                <p id="keyLengthWhole" class="note"></p>
               </div>
             </div>
           </section>
 
           <section class="app-section">
             <h3>📚 さらに学ぶには</h3>
-            <div class="resources">
-              <ul>
-                <li><a href="about_ic.md" target="_blank" rel="noopener noreferrer">ICの数学的詳細</a></li>
-                <li><a href="https://ipusiron.github.io/cipher-clairvoyance/" target="_blank" rel="noopener noreferrer">Cipher Clairvoyance - 暗号化方式推定ツール</a></li>
-                <li><a href="https://ipusiron.github.io/repeatseq-analyzer/" target="_blank" rel="noopener noreferrer">RepeatSeq Analyzer - 反復文字列の特定ツール（カシスキー・テスト）</a></li>
-                <li><a href="https://ipusiron.github.io/frequency-analyzer/" target="_blank" rel="noopener noreferrer">Frequency Analyzer - 頻度分析ツール</a></li>
-              </ul>
-            </div>
+            <ul class="resources">
+              <li><a href="https://github.com/ipusiron/ic-learning-visualizer/blob/main/about_ic.md" target="_blank" rel="noopener noreferrer">ICの数学的な詳細（about_ic.md）</a></li>
+              <li><a href="https://ipusiron.github.io/cipher-clairvoyance/" target="_blank" rel="noopener noreferrer">Cipher Clairvoyance（Day044）- 暗号方式の推定</a></li>
+              <li><a href="https://ipusiron.github.io/repeatseq-analyzer/" target="_blank" rel="noopener noreferrer">RepeatSeq Analyzer（Day028）- 反復文字列からの鍵長推定（カシスキー法）</a></li>
+              <li><a href="https://ipusiron.github.io/modular-text-divider/" target="_blank" rel="noopener noreferrer">Modular Text Divider（Day030）- 周期で列に分ける</a></li>
+              <li><a href="https://ipusiron.github.io/alphaloom/" target="_blank" rel="noopener noreferrer">AlphaLoom（Day046）- 鍵の英単語を探す</a></li>
+              <li><a href="https://ipusiron.github.io/frequency-analyzer/" target="_blank" rel="noopener noreferrer">Frequency Analyzer（Day009）- 頻度分析</a></li>
+            </ul>
           </section>
         </div>
       </div>
-    </div>
-
-    <footer>
-      <div class="footer">
-        🔗 GitHubリポジトリはこちら（<a href="https://github.com/ipusiron/ic-learning-visualizer" target="_blank" rel="noopener noreferrer">ipusiron/ic-learning-visualizer</a>）
-      </div>
-    </footer>
+    </section>
   </main>
 
-  <!-- ヘルプモーダル -->
-  <div id="helpModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="modalTitle">説明</h3>
-        <button class="modal-close">&times;</button>
+  <footer class="footer">
+    <p>Day047 - 生成AIで作るセキュリティツール100</p>
+    <p>🔗 GitHubリポジトリ: <a href="https://github.com/ipusiron/ic-learning-visualizer" target="_blank" rel="noopener noreferrer">ipusiron/ic-learning-visualizer</a></p>
+  </footer>
+
+  <!-- ヘルプ（dialog 要素。Esc で閉じ、閉じると開いたボタンへフォーカスが戻る） -->
+  <dialog id="helpDialog" class="modal" aria-labelledby="helpTitle">
+    <div class="modal-header">
+      <h3 id="helpTitle">説明</h3>
+      <button type="button" class="modal-close" id="helpClose" aria-label="閉じる">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="help-topic" data-help-topic="pair-count" hidden>
+        <h4>📖 同じ文字から2つを順序つきで選ぶ方法の数</h4>
+        <ul>
+          <li>1つ目を選ぶ: n通り</li>
+          <li>2つ目を選ぶ: 残りの n−1 通り</li>
+          <li>合わせて n×(n−1) 通り</li>
+        </ul>
+        <p class="callout">例: 文字Lが2個 → 2×1＝2通り／文字Aが3個 → 3×2＝6通り／文字Eが1個 → 1×0＝0通り</p>
+        <p>すべての文字について n(n−1) を足したもの（Σn(n−1)）が、同じ文字の組を選ぶ方法の数です。分母の N(N−1) も同じく順序つきで数えているので、割ると確率になります。</p>
       </div>
-      <div class="modal-body" id="modalBody">
-        <!-- 動的に内容が設定される -->
+      <div class="help-topic" data-help-topic="ic-ranges" hidden>
+        <h4>📊 ICの区分（このツールの基準）</h4>
+        <ul class="band-list">
+          <li class="band band-language"><strong>言語らしい（0.058〜0.10）</strong>: 平文、単一換字式暗号（シーザー暗号など）、転置式暗号。文字の出現回数は平文と同じ</li>
+          <li class="band band-middle"><strong>中間（0.046〜0.058）</strong>: 鍵の短い（2〜3文字の）多表式暗号、平文と暗号文が混ざった文、短い文</li>
+          <li class="band band-flat"><strong>平坦（0.046未満）</strong>: 鍵の長い多表式暗号（ヴィジュネル暗号など）、ランダムな文字列（1/26≈0.0385）</li>
+          <li class="band band-skewed"><strong>偏りが大きい（0.10以上）</strong>: 同じ文字の繰り返しなど、人工的な文</li>
+        </ul>
+        <p class="callout">50字未満は判定しません。200字未満の短い文では、英文でもICがばらつくので、区分が外れることがあります。</p>
       </div>
     </div>
-  </div>
+  </dialog>
 
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
