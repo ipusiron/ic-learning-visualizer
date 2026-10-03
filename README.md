@@ -299,6 +299,7 @@ ic-learning-visualizer/
 ├── js/                     # 画面以外のモジュール
 │   ├── chart.js            # 収束グラフの描画（canvas）
 │   ├── file-check.js       # file://で起動できなかったときの案内
+│   ├── i18n.js             # 画面の言語（日本語・英語）の決定と切り替え
 │   ├── ic-core.js          # ICの計算（正規化・IC・周期ごとのIC・鍵長の候補・区分・モンテカルロ・鍵長とICの実験）
 │   ├── links.js            # 暗号文を渡してほかのツールで続けるリンク
 │   ├── messages.js         # 画面に出す文言
@@ -313,6 +314,7 @@ ic-learning-visualizer/
 │   ├── experiment.test.js  # 鍵長とICの実験・近似式・ばらつきの帯
 │   ├── format.test.js      # 行の長さ・制御文字・行数の下限
 │   ├── html.test.js        # CSP・要素のid・タブの役割・ラベル
+│   ├── i18n.test.js        # 日英の辞書のキー・英語に日本語がないこと・初期の言語
 │   ├── links.test.js       # ほかのツールへのリンク・URLの受け取り
 │   ├── messages.test.js    # 文言の置き場所とキー
 │   ├── readme.test.js      # READMEの表・構成・ツリー・画像

@@ -6,9 +6,10 @@ import {
   classifyIC, runTrials, historyStep, formatIC, standardError, expectedRate, keyLengthExperiment, ALPHABET
 } from './js/ic-core.js';
 import { SAMPLES, VIGENERE_KEY, VIGENERE_PLAIN, ENGLISH, STEP3_PATTERNS, QUIZ1_OPTIONS, LANGUAGE_IC } from './js/samples.js';
-import { t } from './js/messages.js';
+import { t, setLanguage, getLanguage } from './js/messages.js';
+import { initialLanguage, saveLanguage, applyStaticText, useLanguage } from './js/i18n.js';
 import { initTabs } from './js/tabs.js';
-import { initThemeToggle } from './js/theme.js';
+import { initThemeToggle, refreshThemeButton } from './js/theme.js';
 import { drawConvergence, drawPeriodic, drawExperiment } from './js/chart.js';
 import { buildToolLinks } from './js/links.js';
 import { readParams } from './js/params.js';
@@ -29,7 +30,7 @@ const SPEED = { slow: { per: 1, delay: 400 }, normal: { per: 25, delay: 40 }, fa
 
 const state = {
   step: 1,
-  analysis: { text: '' },
+  analysis: { text: '', N: 0, ic: 0, ignored: 0 },
   monte: { running: false, timer: null, chars: [], total: 0, done: 0, matches: 0, history: [], theory: 0, last: null, step: 1, replacement: false },
   key: null,
   experiment: null
@@ -46,9 +47,18 @@ function el(tag, props = {}, children = []) {
   return node;
 }
 
-function setStatus(node, text, error = false) {
-  node.textContent = text;
+// 状態の表示。キーと値を覚えておき、言語を切り替えたら描き直す（key が空なら消す）
+const said = new Map();
+
+function say(node, key = '', vars = {}, error = false) {
+  if (key) said.set(node, { key, vars });
+  else said.delete(node);
+  node.textContent = key ? t(key, vars) : '';
   node.classList.toggle('error', error);
+}
+
+function resay() {
+  for (const [node, s] of said) node.textContent = t(s.key, s.vars);
 }
 
 // 棒の長さ（CSSOM で幅を入れる。style 属性は使わない）
@@ -70,8 +80,8 @@ function calculateSimple() {
   const status = $('#simpleStatus');
   const raw = $('#simpleText').value;
   const { text, ignored } = normalizeText(raw);
-  if (text.length > SIMPLE_MAX) return setStatus(status, t('step.tooLong'), true);
-  if (text.length < 2) return setStatus(status, t('step.minChars'), true);
+  if (text.length > SIMPLE_MAX) return say(status, 'step.tooLong', {}, true);
+  if (text.length < 2) return say(status, 'step.minChars', {}, true);
   const d = icDetail(text);
   const rows = breakdownRows(text).map((r) => el('tr', {}, [el('td', { text: r.ch }), el('td', { text: String(r.n) }), el('td', { text: String(r.pairs) })]));
   $('#freqTableBody').replaceChildren(...rows);
@@ -81,7 +91,7 @@ function calculateSimple() {
   $('#stepNum').textContent = String(d.pairs);
   $('#stepIC').textContent = formatIC(d.ic);
   $('#icCalc').textContent = `= ${d.pairs} ÷ ${d.denom}`;
-  setStatus(status, ignored ? t('step.ignored', { n: ignored }) : '');
+  say(status, ignored ? 'step.ignored' : '', { n: ignored });
 }
 
 function miniBars(text) {
@@ -131,14 +141,11 @@ function checkQuiz(n) {
   const out = $(`#result${n}`);
   const chosen = document.querySelector(`input[name="q${n}"]:checked`);
   out.classList.remove('correct', 'incorrect');
-  if (!chosen) {
-    out.textContent = t('quiz.choose');
-    return;
-  }
+  if (!chosen) return say(out, 'quiz.choose');
   const ok = chosen.value === 'b';
   out.classList.add(ok ? 'correct' : 'incorrect');
   const c = formatIC(icDetail(QUIZ1_OPTIONS.c).ic);
-  out.textContent = t(`quiz.${ok ? 'correct' : 'wrong'}${n}`, { c });
+  say(out, `quiz.${ok ? 'correct' : 'wrong'}${n}`, { c });
 }
 
 function initSteps() {
@@ -162,7 +169,7 @@ function analysisOptions() {
 
 function selectSample(name) {
   for (const b of document.querySelectorAll('.sample-btn')) b.setAttribute('aria-pressed', String(b.dataset.sample === name));
-  $('#sampleNote').textContent = t(`sample.${name}`, { key: VIGENERE_KEY });
+  say($('#sampleNote'), `sample.${name}`, { key: VIGENERE_KEY });
   if (name === 'custom') {
     $('#analyzeText').value = '';
     $('#analyzeText').focus();
@@ -187,6 +194,17 @@ function renderChart(text) {
   note.textContent = other ? t('analyze.other', { n: fmt(other) }) : '';
 }
 
+function renderAnalysis() {
+  const a = state.analysis;
+  if (!a.N) return;
+  $('#metricN').textContent = fmt(a.N);
+  $('#metricIC').textContent = formatIC(a.ic);
+  $('#currentICValue').textContent = formatIC(a.ic);
+  setBar($('#currentICBar'), a.ic, 0.1);
+  renderChart(a.text);
+  renderBand(a.ic, a.N);
+}
+
 function renderBand(ic, N) {
   const { band, short } = classifyIC(ic, N);
   $('#metricType').textContent = t(`band.${band}`);
@@ -199,19 +217,14 @@ function renderBand(ic, N) {
 function analyze() {
   const status = $('#analyzeStatus');
   const raw = $('#analyzeText').value;
-  if (!raw.trim()) return setStatus(status, t('analyze.empty'), true);
-  if (raw.length > MAX_TEXT) return setStatus(status, t('analyze.tooLong', { n: fmt(raw.length), max: fmt(MAX_TEXT) }), true);
+  if (!raw.trim()) return say(status, 'analyze.empty', {}, true);
+  if (raw.length > MAX_TEXT) return say(status, 'analyze.tooLong', { n: fmt(raw.length), max: fmt(MAX_TEXT) }, true);
   const { text, ignored } = normalizeText(raw, analysisOptions());
   const d = icDetail(text);
-  if (d.N < 2) return setStatus(status, t('analyze.tooFew'), true);
-  state.analysis.text = text;
-  $('#metricN').textContent = fmt(d.N);
-  $('#metricIC').textContent = formatIC(d.ic);
-  $('#currentICValue').textContent = formatIC(d.ic);
-  setBar($('#currentICBar'), d.ic, 0.1);
-  renderChart(text);
-  renderBand(d.ic, d.N);
-  setStatus(status, t('analyze.done', { n: fmt(d.N), ignored: fmt(ignored) }));
+  if (d.N < 2) return say(status, 'analyze.tooFew', {}, true);
+  state.analysis = { text, N: d.N, ic: d.ic, ignored };
+  renderAnalysis();
+  say(status, 'analyze.done', { n: fmt(d.N), ignored: fmt(ignored) });
   // モンテカルロの対象が「サンプル分析タブのテキスト」なら、前の実験の結果を残さない（実験中は対象を変えられない）
   if ($('#monteTextSource').value === 'current' && !state.monte.running) resetMonte();
 }
@@ -248,10 +261,13 @@ function updatePreview() {
   $('#previewIC').textContent = formatIC(icDetail(text).ic);
 }
 
-function updateCustomInfo() {
+function renderCustomInfo() {
   const raw = $('#monteCustomText').value;
-  $('#customTextLength').textContent = fmt([...raw].length);
-  $('#customTextProcessed').textContent = fmt(normalizeText(raw).text.length);
+  $('#customTextInfo').textContent = t('monte.customInfo', { raw: fmt([...raw].length), letters: fmt(normalizeText(raw).text.length) });
+}
+
+function updateCustomInfo() {
+  renderCustomInfo();
   resetMonte();
 }
 
@@ -311,12 +327,12 @@ function finishMonte(stopped) {
   m.running = false;
   clearTimeout(m.timer);
   lockMonte(false);
-  if (stopped) return setStatus($('#monteStatus'), t('monte.stopped', { done: fmt(m.done) }));
+  if (stopped) return say($('#monteStatus'), 'monte.stopped', { done: fmt(m.done) });
   const rate = m.done ? m.matches / m.done : 0;
-  setStatus($('#monteStatus'), t('monte.done', {
+  say($('#monteStatus'), 'monte.done', {
     total: fmt(m.done), exp: formatIC(rate), ic: formatIC(m.theory), diff: formatIC(Math.abs(rate - m.theory)),
     se2: formatIC(2 * standardError(m.theory, m.done))
-  }));
+  });
 }
 
 function tick() {
@@ -335,21 +351,21 @@ function tick() {
   }
   renderMonte();
   if (m.done >= m.total) return finishMonte(false);
-  setStatus($('#monteStatus'), t('monte.running', { done: fmt(m.done), total: fmt(m.total) }));
+  say($('#monteStatus'), 'monte.running', { done: fmt(m.done), total: fmt(m.total) });
   m.timer = setTimeout(tick, speed.delay);
 }
 
 function startMonte() {
   const status = $('#monteStatus');
   const source = $('#monteTextSource').value;
-  if (source === 'custom' && !$('#monteCustomText').value.trim()) return setStatus(status, t('monte.needCustom'), true);
+  if (source === 'custom' && !$('#monteCustomText').value.trim()) return say(status, 'monte.needCustom', {}, true);
   const text = monteText();
   const chars = [...text];
-  if (chars.length < 2) return setStatus(status, t('monte.tooShort'), true);
+  if (chars.length < 2) return say(status, 'monte.tooShort', {}, true);
   const input = $('#monteTrials');
   const total = Number(input.value);
   if (!Number.isInteger(total) || total < MONTE_MIN || total > MONTE_MAX || (input.validity && input.validity.badInput)) {
-    return setStatus(status, t('monte.badTrials', { min: fmt(MONTE_MIN), max: fmt(MONTE_MAX) }), true);
+    return say(status, 'monte.badTrials', { min: fmt(MONTE_MIN), max: fmt(MONTE_MAX) }, true);
   }
   const replacement = $('#monteReplacement').checked;
   Object.assign(state.monte, {
@@ -372,7 +388,7 @@ function resetMonte() {
   $('#matchBadge').className = 'match-badge';
   $('#pickWindow1').replaceChildren();
   $('#pickWindow2').replaceChildren();
-  setStatus($('#monteStatus'), '');
+  say($('#monteStatus'));
   renderMonte();
 }
 
@@ -403,11 +419,20 @@ function estimateKeyLength() {
   const raw = $('#vigenereText').value;
   const box = $('#keyLengthResult');
   box.hidden = true;
-  if (!raw.trim()) return setStatus(status, t('key.empty'), true);
-  if (raw.length > MAX_TEXT) return setStatus(status, t('key.tooLong', { n: fmt(raw.length), max: fmt(MAX_TEXT) }), true);
+  if (!raw.trim()) return say(status, 'key.empty', {}, true);
+  if (raw.length > MAX_TEXT) return say(status, 'key.tooLong', { n: fmt(raw.length), max: fmt(MAX_TEXT) }, true);
   const text = normalizeText(raw).text;
-  if (text.length < KEY_MIN_LETTERS) return setStatus(status, t('key.tooShort', { n: text.length, min: KEY_MIN_LETTERS }), true);
+  if (text.length < KEY_MIN_LETTERS) return say(status, 'key.tooShort', { n: text.length, min: KEY_MIN_LETTERS }, true);
   const r = keyLengthCandidates(text);
+  state.key = { text, r, curve: [{ k: 1, ic: r.whole }, ...r.curve] };
+  box.hidden = false;
+  renderKeyResult();
+  say(status);
+}
+
+function renderKeyResult() {
+  if (!state.key) return;
+  const { text, r } = state.key;
   const icOf = Object.fromEntries(r.curve.map((p) => [p.k, p.ic]));
   const rows = r.candidates.slice(0, KEY_ROWS).map((k, i) => el('tr', { className: icOf[k] >= KEY_IC_THRESHOLD ? 'hit' : '' }, [
     el('td', { text: String(i + 1) }), el('td', { text: String(k) }), el('td', { text: formatIC(icOf[k]) }),
@@ -415,14 +440,13 @@ function estimateKeyLength() {
   ]));
   $('#keyLengthTable tbody').replaceChildren(...rows);
   const hits = r.candidates.filter((k) => icOf[k] >= KEY_IC_THRESHOLD).slice(0, 3);
+  const maxK = Math.max(...r.curve.map((p) => p.k));
   $('#keyLengthVerdict').textContent = r.periodFound
-    ? t('key.found', { list: hits.join(t('key.listJoin')), th: KEY_IC_THRESHOLD }) : t('key.notFound', { th: KEY_IC_THRESHOLD });
+    ? t('key.found', { list: hits.join(t('key.listJoin')), th: KEY_IC_THRESHOLD })
+    : t('key.notFound', { th: KEY_IC_THRESHOLD, max: maxK });
   $('#keyLengthWhole').textContent = t(r.whole >= KEY_IC_THRESHOLD ? 'key.wholeHigh' : 'key.whole', { ic: formatIC(r.whole) });
-  state.key = { curve: [{ k: 1, ic: r.whole }, ...r.curve] };
   renderToolLinks(text, r.periodFound ? r.candidates[0] : null);
-  box.hidden = false;
   drawKeyChart();
-  setStatus(status, '');
 }
 
 function drawKeyChart() {
@@ -455,7 +479,7 @@ function experimentPlain() {
 function drawExperimentChart() {
   if (!state.experiment || $('#experimentResult').hidden) return;
   drawExperiment($('#experimentCanvas'), {
-    rows: state.experiment.rows,
+    rows: state.experiment.r.rows,
     labels: { x: t('exp.axisX'), y: t('exp.axisY'), measured: t('exp.legendMeasured'), approx: t('exp.legendApprox'), random: t('exp.legendRandom') }
   });
 }
@@ -463,27 +487,31 @@ function drawExperimentChart() {
 function runExperiment() {
   const status = $('#experimentStatus');
   const plain = experimentPlain();
-  if (plain.length < EXPERIMENT_MIN_LETTERS) return setStatus(status, t('exp.tooShort', { n: plain.length, min: EXPERIMENT_MIN_LETTERS }), true);
+  if (plain.length < EXPERIMENT_MIN_LETTERS) return say(status, 'exp.tooShort', { n: plain.length, min: EXPERIMENT_MIN_LETTERS }, true);
   const input = $('#experimentTrials');
   const trials = Number(input.value);
-  if (!Number.isInteger(trials) || trials < 1 || trials > 50) return setStatus(status, t('exp.badTrials'), true);
-  const r = keyLengthExperiment(plain, EXPERIMENT_LENGTHS, Math.random, trials);
-  state.experiment = r;
+  if (!Number.isInteger(trials) || trials < 1 || trials > 50) return say(status, 'exp.badTrials', {}, true);
+  state.experiment = { r: keyLengthExperiment(plain, EXPERIMENT_LENGTHS, Math.random, trials), n: plain.length };
+  $('#experimentResult').hidden = false;
+  renderExperiment();
+  say(status, 'exp.done', { trials });
+}
+
+function renderExperiment() {
+  if (!state.experiment) return;
+  const { r, n } = state.experiment;
   const row = (L) => r.rows.find((x) => x.L === L);
   $('#experimentSummary').textContent = t('exp.summary', {
-    n: fmt(plain.length), kp: formatIC(r.kp), m5: formatIC(row(5).measured), a5: formatIC(row(5).approx), m20: formatIC(row(20).measured)
+    n: fmt(n), kp: formatIC(r.kp), m5: formatIC(row(5).measured), a5: formatIC(row(5).approx), m20: formatIC(row(20).measured)
   });
   const rows = r.rows.map((x) => el('tr', {}, [
     el('td', { text: String(x.L) }), el('td', { text: formatIC(x.measured) }), el('td', { text: formatIC(x.approx) })
   ]));
   $('#experimentTable tbody').replaceChildren(...rows);
-  $('#experimentResult').hidden = false;
   drawExperimentChart();
-  setStatus(status, t('exp.done', { trials }));
 }
 
 function initAdvanced() {
-  $('#thresholdText').textContent = String(KEY_IC_THRESHOLD);
   renderLanguageTable();
   $('#estimateKeyLength').addEventListener('click', estimateKeyLength);
   $('#loadVigenereSample').addEventListener('click', () => {
@@ -498,7 +526,7 @@ function applyParams(tabs) {
   const { text, tab } = readParams(window.location.search);
   if (text) {
     for (const b of document.querySelectorAll('.sample-btn')) b.setAttribute('aria-pressed', String(b.dataset.sample === 'custom'));
-    $('#sampleNote').textContent = t('sample.url');
+    say($('#sampleNote'), 'sample.url');
     $('#analyzeText').value = text;
     analyze();
     $('#vigenereText').value = text;
@@ -539,12 +567,39 @@ function initHelp() {
   });
 }
 
+// ===== 言語の切り替え =====
+// 静的な文言は data-i18n で、JS が組み立てた文言は状態から描き直す（入力と結果はそのまま残す）
+function rerenderAll() {
+  refreshThemeButton($('#btnTheme'));
+  renderPatterns();
+  renderLanguageComparison();
+  renderLanguageTable();
+  renderAnalysis();
+  renderCustomInfo();
+  updatePreview();
+  renderMonte();
+  renderKeyResult();
+  renderExperiment();
+  resay();
+}
+
+function switchLanguage() {
+  const next = getLanguage() === 'ja' ? 'en' : 'ja';
+  useLanguage(next);
+  saveLanguage(next);
+  rerenderAll();
+}
+
 // ===== 初期化 =====
 function init() {
+  setLanguage(initialLanguage());
+  applyStaticText();
+  $('#btnLang').addEventListener('click', switchLanguage);
   initThemeToggle($('#btnTheme'));
   initSteps();
   initAnalysis();
   initMonte();
+  renderCustomInfo();
   initAdvanced();
   initHelp();
   const tabs = initTabs($('.tabs'), redrawCharts);

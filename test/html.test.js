@@ -5,7 +5,8 @@ import { KEY_IC_THRESHOLD } from '../js/ic-core.js';
 
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const read = (f) => fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
-const SCRIPTS = ['script.js', 'js/chart.js', 'js/tabs.js', 'js/theme.js', 'js/theme-init.js', 'js/file-check.js', 'js/links.js', 'js/params.js'];
+const SCRIPTS = ['script.js', 'js/chart.js', 'js/tabs.js', 'js/theme.js', 'js/theme-init.js', 'js/file-check.js', 'js/links.js', 'js/params.js',
+  'js/i18n.js'];
 
 test('CSP: インラインのスクリプト・スタイルを許さず、外部への送信先を持たない', () => {
   const m = html.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/);
@@ -58,18 +59,18 @@ test('画面の要素の id がそろっている（それぞれ1つだけ）', 
     'stepDenom', 'denomCalc', 'stepNum', 'stepIC', 'icCalc', 'patternDemo', 'languageComparison', 'result1', 'result2', 'sampleNote', 'analyzeText',
     'analyzeAZ', 'analyzeSpaces', 'btnAnalyze', 'analyzeStatus', 'analysisChart', 'chartOther', 'metricN', 'metricIC', 'metricType', 'barRandom',
     'valueRandom', 'currentICBar', 'currentICValue', 'barEnglish', 'valueEnglish', 'typeInference', 'monteTextSource', 'monteTrials', 'monteSpeed',
-    'customTextSection', 'monteCustomText', 'customTextLength', 'customTextProcessed', 'textPreview', 'previewLength', 'previewIC', 'monteStart',
+    'customTextSection', 'monteCustomText', 'customTextInfo', 'textPreview', 'previewLength', 'previewIC', 'monteStart',
     'monteStop', 'monteReset', 'monteStatus', 'pickWindow1', 'pickWindow2', 'pos1', 'pos2', 'char1', 'char2', 'matchBadge', 'trialCount',
-    'matchCount', 'experimentalIC', 'theoreticalIC', 'convergenceCanvas', 'monteProgressBar', 'monteProgress', 'languageTable', 'thresholdText',
+    'matchCount', 'experimentalIC', 'theoreticalIC', 'convergenceCanvas', 'monteProgressBar', 'monteProgress', 'languageTable',
     'vigenereText', 'estimateKeyLength', 'loadVigenereSample', 'keyLengthStatus', 'keyLengthResult', 'keyLengthTable', 'keyLengthVerdict',
     'keyLengthWhole', 'helpDialog', 'helpTitle', 'helpClose', 'monteReplacement', 'theoryLabel', 'experimentSource', 'experimentTrials',
     'runExperiment', 'experimentStatus', 'experimentResult', 'experimentCanvas', 'experimentSummary', 'experimentTable', 'periodicCanvas',
-    'keyLengthLinks'];
+    'keyLengthLinks', 'btnLang'];
   for (const id of ids) assert.equal(html.split(`id="${id}"`).length - 1, 1, id);
 });
 
 test('タブは role=tablist／tab／tabpanel の組で、aria-controls と aria-labelledby が対応する', () => {
-  assert.match(html, /<nav class="tabs" role="tablist" aria-label="[^"]+">/);
+  assert.match(html, /<nav class="tabs" role="tablist" aria-label="[^"]+"[^>]*>/);
   const re = /<button type="button" class="tab-button" role="tab" id="(tab-[\w-]+)" aria-controls="(panel-[\w-]+)" aria-selected="(true|false)"/g;
   const tabs = [...html.matchAll(re)];
   assert.equal(tabs.length, 4);
@@ -99,6 +100,6 @@ test('ボタンには type、入力欄にはラベル、外部リンクには no
   assert.match(read('script.js'), /target: '_blank', rel: 'noopener noreferrer'/);
 });
 
-test('画面のしきい値の初期表示はロジックの値と同じ', () => {
-  assert.match(html, new RegExp(`<span id="thresholdText">${KEY_IC_THRESHOLD}</span>`));
+test('画面のしきい値の説明はロジックの値と同じ', () => {
+  assert.ok(html.includes(`平均が${KEY_IC_THRESHOLD}以上の周期`));
 });
