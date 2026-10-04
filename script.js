@@ -17,7 +17,7 @@ import { initTabs } from './js/tabs.js';
 import { initThemeToggle, refreshThemeButton } from './js/theme.js';
 import { drawConvergence, drawPeriodic, drawExperiment, drawHistogram } from './js/chart.js';
 import { buildToolLinks } from './js/links.js';
-import { readParams } from './js/params.js';
+import { readParams, urlWithoutText } from './js/params.js';
 
 const $ = (sel) => document.querySelector(sel);
 const fmt = (n) => n.toLocaleString('en-US');
@@ -890,6 +890,15 @@ function initAdvanced() {
 // URL の ?text= を、サンプル分析と鍵長推定の両方に入れて実行する。?tab= で開くタブを選ぶ
 function applyParams(tabs) {
   const { text, tab } = readParams(window.location.search);
+  // 読み込んだら URL から text を消す（replaceState なので「戻る」の回数は増えない）
+  const cleaned = urlWithoutText(window.location.href);
+  if (cleaned !== null) {
+    try {
+      history.replaceState(history.state, '', cleaned);
+    } catch {
+      // 消せない環境でも、読み込みはそのまま続ける
+    }
+  }
   if (text) {
     for (const b of document.querySelectorAll('.sample-btn')) b.setAttribute('aria-pressed', String(b.dataset.sample === 'custom'));
     say($('#sampleNote'), 'sample.url');
