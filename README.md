@@ -175,6 +175,8 @@ URLに`?text=`を付けると、その文字列をサンプル分析と鍵長推
 
 - `https://ipusiron.github.io/ic-learning-visualizer/?text=ELQJVRIZSEPGUDUPVEVVQXESNNLXSGEIDCSELQARDWMURMCMRVQJQFRYXMABFRF&tab=advanced`（ヴィジュネル暗号のサンプルの最初の1文、63字。開くと鍵長の候補の1位が5になる）
 - `?text=`は10,000字まで（Day030・Day046と同じ上限）
+- 読み込んだあと、URLから`text`だけを消す（`tab`・`lang`は残す）。アドレスバー・ブックマーク・URLのコピーに暗号文を残さないため。開いたときのURLは、ブラウザーの閲覧履歴やGitHub Pagesのサーバーのログに残ることがある
+- Cipher Clairvoyance（Day044）は、ヴィジュネル暗号・オートキー暗号と判定した暗号文を、この形で鍵長推定のタブに渡せる
 - 言語は`?lang=ja`・`?lang=en`で指定できる
 
 ---
@@ -387,6 +389,7 @@ $$L \approx \frac{(\kappa_p - \kappa_r)\,N}{(N - 1)\,IC - \kappa_r N + \kappa_p}
 
 - 入力した文は、ブラウザーの中だけで扱う。サーバーへの送信や保存はしない
 - ほかのツールへのリンクは、押したときだけ暗号文（と鍵長）をURLに入れて新しいタブで開く（`rel="noopener noreferrer"`）
+- URLで受け取った`?text=`は、読み込んだあとアドレスバーから消す（閲覧履歴やサーバーのログには、開いたときのURLが残ることがある）
 - Content Security Policy（meta）で、スクリプト・スタイル・通信先を同じサイトに限る。インラインのスクリプト・イベントハンドラー・style属性は使わない
 - 入力した文字や結果は、すべて`textContent`で画面に入れる（HTMLとして解釈しない）
 - 入力は10万字まで、URLの`?text=`は1万字まで

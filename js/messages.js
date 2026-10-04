@@ -53,7 +53,7 @@ const JA = {
   'sample.french': 'フランス語の文です。é・è・ç などはアクセント記号を外して数えます。',
   'sample.repeated': 'A〜E を6個ずつ並べて繰り返した人工的な文です。',
   'sample.custom': '自分の文を入れて「分析する」を押してください。',
-  'sample.url': 'URL で渡された文を分析しました。応用タブの鍵長推定にも入れています。',
+  'sample.url': 'URL で渡された文を分析しました。応用タブの鍵長推定にも入れています。アドレスバーのURLからは消しました。',
   'analyze.empty': 'テキストを入れてください',
   'analyze.tooLong': 'テキストが長すぎます（{n} 字。上限は {max} 字）',
   'analyze.tooFew': '数える文字が2文字未満です（A〜Zだけを数えるときは英字を入れてください）',
@@ -490,7 +490,8 @@ const EN = {
   'sample.french': 'French text. é, è, ç and others are counted with their accents removed.',
   'sample.repeated': 'Artificial text repeating A to E six times each.',
   'sample.custom': 'Enter your own text and press "Analyze".',
-  'sample.url': 'The text passed in the URL was analyzed. It is also in the key length estimation on the Cryptanalysis tab.',
+  'sample.url': 'The text passed in the URL was analyzed. It is also in the key length estimation on the Cryptanalysis tab. '
+    + 'It has been removed from the URL in the address bar.',
   'analyze.empty': 'Enter a text',
   'analyze.tooLong': 'The text is too long ({n} characters; the limit is {max})',
   'analyze.tooFew': 'Fewer than 2 characters to count (enter letters when counting only A-Z)',
