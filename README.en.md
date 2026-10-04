@@ -132,11 +132,12 @@ The buttons at the top right switch between Japanese and English and between lig
 
 ## 🔗 Passing text in the URL
 
-Add `?text=` to the URL to open the tool with that text already analyzed on the Sample analysis tab and in the key length estimation. Use `&tab=` to choose the tab (`learn`, `analyze`, `monte` or `advanced`; the default is sample analysis). This is useful for opening the tool with a ciphertext from another tool or an article.
+Add `#text=` (or `?text=`) to the URL to open the tool with that text already analyzed on the Sample analysis tab and in the key length estimation. Use `&tab=` to choose the tab (`learn`, `analyze`, `monte` or `advanced`; the default is sample analysis). This is useful for opening the tool with a ciphertext from another tool or an article.
 
-- `https://ipusiron.github.io/ic-learning-visualizer/?text=ELQJVRIZSEPGUDUPVEVVQXESNNLXSGEIDCSELQARDWMURMCMRVQJQFRYXMABFRF&tab=advanced` (the first sentence of the Vigenère cipher sample, 63 letters; the first key length candidate is 5)
-- `?text=` takes up to 10,000 characters (the same limit as Day030 and Day046)
-- After reading it, the tool removes only `text` from the URL (`tab` and `lang` stay), so the ciphertext does not remain in the address bar, bookmarks or copied URLs. The URL as opened may still remain in the browser history and in the GitHub Pages server logs
+- `https://ipusiron.github.io/ic-learning-visualizer/#text=ELQJVRIZSEPGUDUPVEVVQXESNNLXSGEIDCSELQARDWMURMCMRVQJQFRYXMABFRF&tab=advanced` (the first sentence of the Vigenère cipher sample, 63 letters; the first key length candidate is 5)
+- The part after `#` is not sent to the server, so the ciphertext does not reach GitHub Pages and is not subject to the URL length limit (GitHub Pages accepts up to 8,192 bytes for the path and the part after `?`). With `?text=`, more than about 8,150 characters ends on an error page
+- The text takes up to 10,000 characters (the same limit as Day030 and Day046). If both `#` and `?` have it, `#` wins
+- After reading it, the tool removes only `text` from both `#` and `?` in the URL (`tab` and `lang` stay), so the ciphertext does not remain in the address bar, bookmarks or copied URLs. The URL as opened may still remain in the browser history and in the GitHub Pages server logs
 - Cipher Clairvoyance (Day044) can pass a ciphertext it judges to be a Vigenère or autokey cipher to the key length estimation tab in this form
 - The language can be chosen with `?lang=ja` or `?lang=en`
 
@@ -349,11 +350,11 @@ The values depend on the texts counted, so they differ a little from source to s
 ## 🔒 Security and privacy
 
 - The text you enter is handled only inside the browser. Nothing is sent to or stored on a server
-- The links to other tools put the ciphertext (and key length) into the URL only when clicked, and open it in a new tab (`rel="noopener noreferrer"`)
-- `?text=` received in the URL is removed from the address bar after reading (the URL as opened may remain in the browser history and server logs)
+- The links to other tools put the ciphertext (and key length) after `#` in the URL only when clicked (so it is not sent to the server), and open it in a new tab (`rel="noopener noreferrer"`)
+- `text` received in the URL is removed from the address bar after reading (the URL as opened may remain in the browser history, and in server logs when it came with `?text=`)
 - A Content Security Policy (meta) limits scripts, styles and connections to the same site. No inline scripts, inline event handlers or style attributes are used
 - Every letter and result is put on the screen with `textContent` (never interpreted as HTML)
-- Input up to 100,000 characters, and `?text=` in the URL up to 10,000 characters
+- Input up to 100,000 characters, and `#text=` or `?text=` in the URL up to 10,000 characters
 - Only the theme and language choices are saved in localStorage (the tool works where storage is unavailable)
 - Saving results only creates a file inside the browser and downloads it (nothing is sent)
 - The English text for the spread experiment (`corpus/eval-pg98.txt`) is loaded from the same site
@@ -431,7 +432,7 @@ ic-learning-visualizer/
 │   ├── ic-core.js          # IC logic (normalization, periodic IC, key length, bands, Monte Carlo, experiments, kappa, columns, Friedman, seeds)
 │   ├── links.js            # Links that pass the ciphertext to other tools
 │   ├── messages.js         # Strings shown on the screen (Japanese, English)
-│   ├── params.js           # Reads ?text= and ?tab= from the URL
+│   ├── params.js           # Reads #text= and tab= (or ?) from the URL
 │   ├── samples.js          # Samples, step examples, quiz answers and the language IC table
 │   ├── tabs.js             # Tab switching (including the keyboard)
 │   ├── theme-init.js       # Applies the theme at the start of loading

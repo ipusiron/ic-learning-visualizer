@@ -1,9 +1,10 @@
 // 鍵長推定の結果から、暗号文を渡してほかのツールで続けるリンク（DOM 非依存）
 // いずれも「生成AIで作るセキュリティツール100」のツール。受け取り方は各ツールの README の仕様に合わせる
-//   Day030 Modular Text Divider ?text=…&n=…（10,000字まで、n は1〜20。周期 n で列に分ける）
-//   Day046 AlphaLoom            ?text=…&n=…（10,000字まで、n は1〜20。鍵の英単語を探す）
-//   Day017 Vigenère Cipher Tool ?text=（入力欄に読み込む）
-//   Day009 Frequency Analyzer   ?text=（5,000字まで。読み込むと頻度分析を実行）
+// 「#」より後ろで渡す（サーバーへ送られず、GitHub Pages の URL の長さの上限〔8,192バイト〕も受けない）
+//   Day030 Modular Text Divider #text=…&n=…（10,000字まで、n は1〜20。周期 n で列に分ける）
+//   Day046 AlphaLoom            #text=…&n=…（10,000字まで、n は1〜20。鍵の英単語を探す）
+//   Day017 Vigenère Cipher Tool #text=（入力欄に読み込む）
+//   Day009 Frequency Analyzer   #text=（5,000字まで。読み込むと頻度分析を実行）
 
 export const BASE = 'https://ipusiron.github.io/';
 export const MAX_PERIOD = 20;
@@ -28,6 +29,6 @@ export function buildToolLinks(letters, period = null) {
     const params = new URLSearchParams();
     params.set('text', letters);
     if (tool.needsPeriod) params.set('n', String(period));
-    return { id: tool.id, key: tool.key, href: `${href}?${params.toString()}`, passed: true, reason: null, max: tool.max };
+    return { id: tool.id, key: tool.key, href: `${href}#${params.toString()}`, passed: true, reason: null, max: tool.max };
   });
 }

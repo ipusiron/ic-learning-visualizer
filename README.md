@@ -171,11 +171,12 @@ hub: true
 
 ## 🔗 URLで文字列を渡す
 
-URLに`?text=`を付けると、その文字列をサンプル分析と鍵長推定の両方に入れて実行した状態で開きます。`&tab=`で開くタブを選べます（`learn`・`analyze`・`monte`・`advanced`。省略するとサンプル分析）。ほかのツールや記事から、暗号文を渡して開くときに使えます。
+URLに`#text=`（または`?text=`）を付けると、その文字列をサンプル分析と鍵長推定の両方に入れて実行した状態で開きます。`&tab=`で開くタブを選べます（`learn`・`analyze`・`monte`・`advanced`。省略するとサンプル分析）。ほかのツールや記事から、暗号文を渡して開くときに使えます。
 
-- `https://ipusiron.github.io/ic-learning-visualizer/?text=ELQJVRIZSEPGUDUPVEVVQXESNNLXSGEIDCSELQARDWMURMCMRVQJQFRYXMABFRF&tab=advanced`（ヴィジュネル暗号のサンプルの最初の1文、63字。開くと鍵長の候補の1位が5になる）
-- `?text=`は10,000字まで（Day030・Day046と同じ上限）
-- 読み込んだあと、URLから`text`だけを消す（`tab`・`lang`は残す）。アドレスバー・ブックマーク・URLのコピーに暗号文を残さないため。開いたときのURLは、ブラウザーの閲覧履歴やGitHub Pagesのサーバーのログに残ることがある
+- `https://ipusiron.github.io/ic-learning-visualizer/#text=ELQJVRIZSEPGUDUPVEVVQXESNNLXSGEIDCSELQARDWMURMCMRVQJQFRYXMABFRF&tab=advanced`（ヴィジュネル暗号のサンプルの最初の1文、63字。開くと鍵長の候補の1位が5になる）
+- `#`より後ろはサーバーへ送られないので、暗号文がGitHub Pagesに届かず、URLの長さの上限（GitHub Pagesはパスと`?`以降で8,192バイトまで）も受けない。`?text=`で約8,150字を超えるとエラーのページになる
+- 文字列は10,000字まで（Day030・Day046と同じ上限）。`#`と`?`の両方にあれば`#`を優先する
+- 読み込んだあと、URLの`#`と`?`の両方から`text`だけを消す（`tab`・`lang`は残す）。アドレスバー・ブックマーク・URLのコピーに暗号文を残さないため。開いたときのURLは、ブラウザーの閲覧履歴やGitHub Pagesのサーバーのログに残ることがある
 - Cipher Clairvoyance（Day044）は、ヴィジュネル暗号・オートキー暗号と判定した暗号文を、この形で鍵長推定のタブに渡せる
 - 言語は`?lang=ja`・`?lang=en`で指定できる
 
@@ -388,11 +389,11 @@ $$L \approx \frac{(\kappa_p - \kappa_r)\,N}{(N - 1)\,IC - \kappa_r N + \kappa_p}
 ## 🔒 セキュリティとプライバシー
 
 - 入力した文は、ブラウザーの中だけで扱う。サーバーへの送信や保存はしない
-- ほかのツールへのリンクは、押したときだけ暗号文（と鍵長）をURLに入れて新しいタブで開く（`rel="noopener noreferrer"`）
-- URLで受け取った`?text=`は、読み込んだあとアドレスバーから消す（閲覧履歴やサーバーのログには、開いたときのURLが残ることがある）
+- ほかのツールへのリンクは、押したときだけ暗号文（と鍵長）をURLの`#`より後ろに入れて新しいタブで開く（サーバーへは送られない。`rel="noopener noreferrer"`）
+- URLで受け取った`text`は、読み込んだあとアドレスバーから消す（閲覧履歴には、開いたときのURLが残ることがある。`?text=`で受け取ったときはサーバーのログにも残りうる）
 - Content Security Policy（meta）で、スクリプト・スタイル・通信先を同じサイトに限る。インラインのスクリプト・イベントハンドラー・style属性は使わない
 - 入力した文字や結果は、すべて`textContent`で画面に入れる（HTMLとして解釈しない）
-- 入力は10万字まで、URLの`?text=`は1万字まで
+- 入力は10万字まで、URLの`#text=`・`?text=`は1万字まで
 - localStorageには、テーマと言語の選択だけを保存する（保存できない環境でも動く）
 - 結果の保存は、ブラウザーの中でファイルを作ってダウンロードするだけ（送信しない）
 - ばらつきの実験の英文（`corpus/eval-pg98.txt`）は、同じサイトから読み込む
@@ -470,7 +471,7 @@ ic-learning-visualizer/
 │   ├── ic-core.js          # ICの計算（正規化・周期ごとのIC・鍵長の候補・区分・モンテカルロ・実験・κ・列・フリードマンの式・乱数の種）
 │   ├── links.js            # 暗号文を渡してほかのツールで続けるリンク
 │   ├── messages.js         # 画面に出す文言（日本語・英語）
-│   ├── params.js           # URLの?text=・?tab=を受け取る
+│   ├── params.js           # URLの#text=・tab=（または?）を受け取る
 │   ├── samples.js          # サンプル・ステップの例・クイズの正解・言語ごとのICの表
 │   ├── tabs.js             # タブの切り替え（キーボード操作を含む）
 │   ├── theme-init.js       # 読み込みの最初にテーマを当てる
