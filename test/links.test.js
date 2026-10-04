@@ -3,14 +3,15 @@ import assert from 'node:assert/strict';
 import { buildToolLinks, TOOLS, BASE } from '../js/links.js';
 import { readParams, urlWithoutText, MAX_PARAM_TEXT } from '../js/params.js';
 
-test('鍵長があれば、Day030・Day046 には ?text=…&n=…、Day017・Day009 には ?text= で渡す', () => {
+test('鍵長があれば、Day030・Day046 には #text=…&n=…、Day017・Day009 には #text= で渡す（「#」より後ろはサーバーへ送られない）', () => {
   const links = buildToolLinks('LXFOPVEFRNHR', 5);
   assert.deepEqual(links.map((l) => l.href), [
-    `${BASE}modular-text-divider/?text=LXFOPVEFRNHR&n=5`,
-    `${BASE}alphaloom/?text=LXFOPVEFRNHR&n=5`,
-    `${BASE}vigenere-cipher-tool/?text=LXFOPVEFRNHR`,
-    `${BASE}frequency-analyzer/?text=LXFOPVEFRNHR`
+    `${BASE}modular-text-divider/#text=LXFOPVEFRNHR&n=5`,
+    `${BASE}alphaloom/#text=LXFOPVEFRNHR&n=5`,
+    `${BASE}vigenere-cipher-tool/#text=LXFOPVEFRNHR`,
+    `${BASE}frequency-analyzer/#text=LXFOPVEFRNHR`
   ]);
+  for (const l of buildToolLinks('A'.repeat(10000), 5).filter((x) => x.passed)) assert.equal(new URL(l.href).search, '', l.id);
   assert.ok(links.every((l) => l.passed));
 });
 
@@ -43,4 +44,14 @@ test('読み込んだ ?text= は URL から消す（tab・lang・# は残す。t
   assert.equal(urlWithoutText(`${base}?text=`), '/ic-learning-visualizer/');
   assert.equal(urlWithoutText(`${base}?tab=advanced`), null);
   assert.equal(urlWithoutText(base), null);
+});
+
+test('#text= を先に読み、tab も同じ場所から読む。なければ ?text= から。読み込んだ text は「?」と「#」の両方から消す', () => {
+  assert.deepEqual(readParams('?text=QUERY&tab=learn', '#text=HASH&tab=advanced'), { text: 'HASH', tab: 'advanced' });
+  assert.deepEqual(readParams('?text=QUERY&tab=learn', ''), { text: 'QUERY', tab: 'learn' });
+  assert.equal(readParams('', `#text=${'A'.repeat(MAX_PARAM_TEXT + 5)}`).text.length, MAX_PARAM_TEXT);
+  const base = 'https://ipusiron.github.io/ic-learning-visualizer/';
+  assert.equal(urlWithoutText(`${base}?lang=en#text=ABC&tab=advanced`), '/ic-learning-visualizer/?lang=en#tab=advanced');
+  assert.equal(urlWithoutText(`${base}#text=ABC`), '/ic-learning-visualizer/');
+  assert.equal(urlWithoutText(`${base}?text=ABC#top`), '/ic-learning-visualizer/#top');
 });

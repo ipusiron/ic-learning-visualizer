@@ -887,9 +887,9 @@ function initAdvanced() {
   });
 }
 
-// URL の ?text= を、サンプル分析と鍵長推定の両方に入れて実行する。?tab= で開くタブを選ぶ
+// URL の #text=（または ?text=）を、サンプル分析と鍵長推定の両方に入れて実行する。tab で開くタブを選ぶ
 function applyParams(tabs) {
-  const { text, tab } = readParams(window.location.search);
+  const { text, tab } = readParams(window.location.search, window.location.hash);
   // 読み込んだら URL から text を消す（replaceState なので「戻る」の回数は増えない）
   const cleaned = urlWithoutText(window.location.href);
   if (cleaned !== null) {
