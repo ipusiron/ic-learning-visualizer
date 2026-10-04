@@ -11,3 +11,12 @@ export function readParams(search) {
   const tab = TABS.includes(q.get('tab')) ? q.get('tab') : null;
   return { text, tab };
 }
+
+// 読み込んだ ?text= を URL から消したときのパス（クエリーと # は残す）。text がなければ null。
+// アドレスバー・ブックマーク・URL のコピーに暗号文を残さないため（Day017・Day030 と同じ）
+export function urlWithoutText(href) {
+  const url = new URL(href);
+  if (!url.searchParams.has('text')) return null;
+  url.searchParams.delete('text');
+  return url.pathname + url.search + url.hash;
+}

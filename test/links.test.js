@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildToolLinks, TOOLS, BASE } from '../js/links.js';
-import { readParams, MAX_PARAM_TEXT } from '../js/params.js';
+import { readParams, urlWithoutText, MAX_PARAM_TEXT } from '../js/params.js';
 
 test('鍵長があれば、Day030・Day046 には ?text=…&n=…、Day017・Day009 には ?text= で渡す', () => {
   const links = buildToolLinks('LXFOPVEFRNHR', 5);
@@ -33,4 +33,14 @@ test('URL の ?text= は10,000字まで、?tab= は4つのタブの名前だけ'
   assert.deepEqual(readParams(''), { text: null, tab: null });
   assert.equal(readParams(`?text=${'A'.repeat(MAX_PARAM_TEXT + 5)}`).text.length, MAX_PARAM_TEXT);
   assert.equal(readParams('?text=a%26b%3Dc').text, 'a&b=c');
+});
+
+test('読み込んだ ?text= は URL から消す（tab・lang・# は残す。text がなければ何もしない）', () => {
+  const base = 'https://ipusiron.github.io/ic-learning-visualizer/';
+  assert.equal(urlWithoutText(`${base}?text=ABC&tab=advanced`), '/ic-learning-visualizer/?tab=advanced');
+  assert.equal(urlWithoutText(`${base}?lang=en&text=ABC&tab=analyze#x`), '/ic-learning-visualizer/?lang=en&tab=analyze#x');
+  assert.equal(urlWithoutText(`${base}?text=ABC`), '/ic-learning-visualizer/');
+  assert.equal(urlWithoutText(`${base}?text=`), '/ic-learning-visualizer/');
+  assert.equal(urlWithoutText(`${base}?tab=advanced`), null);
+  assert.equal(urlWithoutText(base), null);
 });

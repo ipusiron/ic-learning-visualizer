@@ -136,6 +136,8 @@ Add `?text=` to the URL to open the tool with that text already analyzed on the 
 
 - `https://ipusiron.github.io/ic-learning-visualizer/?text=ELQJVRIZSEPGUDUPVEVVQXESNNLXSGEIDCSELQARDWMURMCMRVQJQFRYXMABFRF&tab=advanced` (the first sentence of the Vigenère cipher sample, 63 letters; the first key length candidate is 5)
 - `?text=` takes up to 10,000 characters (the same limit as Day030 and Day046)
+- After reading it, the tool removes only `text` from the URL (`tab` and `lang` stay), so the ciphertext does not remain in the address bar, bookmarks or copied URLs. The URL as opened may still remain in the browser history and in the GitHub Pages server logs
+- Cipher Clairvoyance (Day044) can pass a ciphertext it judges to be a Vigenère or autokey cipher to the key length estimation tab in this form
 - The language can be chosen with `?lang=ja` or `?lang=en`
 
 ---
@@ -348,6 +350,7 @@ The values depend on the texts counted, so they differ a little from source to s
 
 - The text you enter is handled only inside the browser. Nothing is sent to or stored on a server
 - The links to other tools put the ciphertext (and key length) into the URL only when clicked, and open it in a new tab (`rel="noopener noreferrer"`)
+- `?text=` received in the URL is removed from the address bar after reading (the URL as opened may remain in the browser history and server logs)
 - A Content Security Policy (meta) limits scripts, styles and connections to the same site. No inline scripts, inline event handlers or style attributes are used
 - Every letter and result is put on the screen with `textContent` (never interpreted as HTML)
 - Input up to 100,000 characters, and `?text=` in the URL up to 10,000 characters
