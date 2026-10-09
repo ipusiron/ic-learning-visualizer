@@ -410,3 +410,26 @@ test('画像: 参照はすべて実在し、日本語版は assets/、英語版�
   assert.deepEqual(pngs('assets'), [...new Set(refs.ja)].sort());
   assert.deepEqual(pngs('assets/en'), [...new Set(refs.en)].sort());
 });
+
+test('ユースケースの「このツールならではの使い方」の値は計算部と同じ（日英）', () => {
+  const [ja, en] = [read('README.md'), read('README.en.md')];
+  const birds = icDetail('A'.repeat(10) + 'B'.repeat(5) + 'C'.repeat(3) + 'D'.repeat(2));
+  const even = icDetail('ABCDE'.repeat(4));
+  assert.deepEqual([birds.N, formatIC(birds.ic), (1 - birds.ic).toFixed(3), (1 - even.ic).toFixed(3)], [20, '0.3105', '0.689', '0.842']);
+  assert.equal(classifyIC(birds.ic, birds.N).band, 'tooShort');
+  assert.equal(MESSAGES.ja['band.tooShort'], '判定しない');
+  for (const part of ['ICは0.3105', '引いた0.689', '0.842と大きく']) assert.ok(ja.includes(part), part);
+  for (const part of ['IC of 0.3105', 'the IC, 0.689', 'larger 0.842']) assert.ok(en.includes(part), part);
+  const hhi = expectedRate('AAAABBBCCD', true);
+  const flat = expectedRate('ABCDEFGHIJ', true);
+  assert.deepEqual([formatIC(hhi), fmt(Math.round(hhi * 10000)), formatIC(flat), fmt(Math.round(flat * 10000))],
+    ['0.3000', '3,000', '0.1000', '1,000']);
+  assert.ok(ja.includes('理論値（Σp²）は0.3000') && ja.includes('3,000で、10社が均等なら0.1000（1,000）'));
+  assert.ok(en.includes('(Σp²) is 0.3000') && en.includes('it is 3,000, and ten equal companies bring it down to 0.1000 (1,000)'));
+  assert.equal(MESSAGES.ja['ui.replacement'], '同じ位置も選ぶ（復元抽出）');
+  const az = formatIC(expectedRate('ABCDEFGHIJKLMNOPQRSTUVWXYZ', true));
+  const eng = formatIC(expectedRate(normalizeText(SAMPLES.english).text, true));
+  assert.deepEqual([az, eng], ['0.0385', '0.0671']);
+  assert.ok(ja.includes(`理論値${az}（1/26）`) && ja.includes(`英語のサンプルでは${eng}`));
+  assert.ok(en.includes(`expected value ${az} (1/26)`) && en.includes(`English sample it is ${eng}`));
+});
